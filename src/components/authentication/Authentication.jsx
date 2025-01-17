@@ -1,5 +1,5 @@
 function Authentication() {
-  return <div>Authentication</div>;
+  return <div className="Authentication">Authentication</div>;
 }
 
 export default Authentication;
