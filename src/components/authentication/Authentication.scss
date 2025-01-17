@@ -1,0 +1,39 @@
+.Authentication {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  height: 100vh;
+
+  .Authentication__left {
+    flex: 1;
+    padding-right: 20px;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+
+    .Authentication__left__logo {
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .Authentication__right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  // Mobile responsive design
+  @media (max-width: 768px) {
+    flex-direction: column;
+    .Authentication__left {
+      order: 1; // Moves Authentication__left above Authentication__right on mobile
+      padding-right: 0;
+    }
+    .Authentication__right {
+      order: 2;
+    }
+  }
+}
