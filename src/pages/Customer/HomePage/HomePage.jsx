@@ -51,6 +51,8 @@ const HomePage = () => {
           />
         </div>
       </section>
+      
+      {/* Third Section */}
       <VaccineSection/>
     </div>
   );
