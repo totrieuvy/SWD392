@@ -53,6 +53,7 @@ const VaccineSection = () => {
                     alt={vaccine.title}
                     src={vaccine.imageUrl}
                     className="h-48 object-cover"
+                    height={300}
                   />
                 }
                 className="h-full"

@@ -1,10 +1,21 @@
 /* Header.css */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+}
+
 .custom-menu .ant-menu-item:hover {
-    background-color: #9989C5 !important; /* Change background color on hover */
-    color: #fff !important; /* Optional: Change text color to white for better contrast */
-  }
-  
-  .custom-menu .ant-menu-item {
-    transition: background-color 0.3s ease; /* Smooth hover transition */
-  }
-  
+  background-color: #9989c5 !important; /* Change background color on hover */
+  color: #fff !important; /* Optional: Change text color to white for better contrast */
+}
+
+.custom-menu .ant-menu-item {
+  transition: background-color 0.3s ease; /* Smooth hover transition */
+}

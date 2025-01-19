@@ -8,7 +8,7 @@ function ForgotPassword() {
   const [form] = useForm();
   return (
     <Authentication>
-      <div className="container">
+      <div className="containerer">
         <div className="ForgotPassword">
           <h2 className="ForgotPassword__title">Forgot Your Password?</h2>
           <Form form={form} labelCol={{ span: 24 }}>

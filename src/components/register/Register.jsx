@@ -8,7 +8,7 @@ function Register() {
   const [form] = useForm();
   return (
     <Authentication>
-      <div className="container">
+      <div className="containerer">
         <div className="Register">
           <h2 className="Register__title">Create Your Account</h2>
           <Form form={form} labelCol={{ span: 24 }}>
