@@ -4,6 +4,7 @@ import Register from "./components/register/Register";
 import ForgotPassword from "./components/forgotPassword/ForgotPassword";
 import CustomerApp from "./layout/Customer/Customer";
 import HomePage from "./pages/Customer/HomePage/HomePage";
+import AboutUs from "./pages/aboutUs/AboutUs";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -14,6 +15,10 @@ const App = () => {
         {
           index: true,
           element: <HomePage />,
+        },
+        {
+          path: "about-us",
+          element: <AboutUs />,
         },
       ],
     },

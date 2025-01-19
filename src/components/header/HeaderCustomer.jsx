@@ -16,22 +16,22 @@ const Header = () => {
         style={{
           display: "flex",
           alignItems: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.8)", 
-          backdropFilter: "blur(8px)", 
+          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           padding: "10px 20px",
           boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
           position: "sticky",
           top: 0,
           zIndex: 1000,
-          transition: "all 0.3s ease", 
+          transition: "all 0.3s ease",
         }}
       >
         {/* Logo Section */}
         <Link
           to="/"
           style={{
-            textDecoration: "none", 
+            textDecoration: "none",
             color: "inherit",
           }}
         >
@@ -83,10 +83,18 @@ const Header = () => {
             flexGrow: 1,
           }}
         >
-          <Menu.Item key="home">Home</Menu.Item>
-          <Menu.Item key="about">About Us</Menu.Item>
-          <Menu.Item key="vaccination">Vaccination</Menu.Item>
-          <Menu.Item key="pricing">Pricing</Menu.Item>
+          <Menu.Item key="home">
+            <Link to={"/"}>Home</Link>
+          </Menu.Item>
+          <Menu.Item key="about">
+            <Link to={"about-us"}>About Us</Link>
+          </Menu.Item>
+          <Menu.Item key="vaccination">
+            <Link to={"vaccination"}>Vaccination</Link>
+          </Menu.Item>
+          <Menu.Item key="pricing">
+            <Link to={"pricing"}>Pricing</Link>
+          </Menu.Item>
           <Menu.Item key="register" icon={<CalendarOutlined />}>
             Register Schedule
           </Menu.Item>
