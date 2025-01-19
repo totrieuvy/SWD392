@@ -5,9 +5,14 @@ import ForgotPassword from "./components/forgotPassword/ForgotPassword";
 import CustomerApp from "./layout/Customer/Customer";
 import HomePage from "./pages/Customer/HomePage/HomePage";
 import AboutUs from "./pages/aboutUs/AboutUs";
+import NotFoundPage from "./pages/error/NotFoundPage";
 
 const App = () => {
   const router = createBrowserRouter([
+    {
+      path: "*",
+      element: <NotFoundPage />,
+    },
     {
       path: "/",
       element: <CustomerApp />,
