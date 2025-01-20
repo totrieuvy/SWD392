@@ -1,113 +1,137 @@
-import React from "react";
-import { ConfigProvider, Button, Menu } from "antd";
-import { CalendarOutlined } from "@ant-design/icons";
+import React, { useState, useEffect } from "react";
+import { ConfigProvider, Button, Menu, Drawer } from "antd";
+import { 
+  CalendarOutlined, 
+  MenuOutlined,
+  HomeOutlined,
+  InfoCircleOutlined,
+  MedicineBoxOutlined,
+  DollarOutlined
+} from "@ant-design/icons";
 import { Link } from "react-router-dom";
+import './Header.css';
 
 const Header = () => {
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const menuItems = [
+    {
+      key: 'home',
+      icon: <HomeOutlined />,
+      label: <Link to="/">Home</Link>,
+    },
+    {
+      key: 'about',
+      icon: <InfoCircleOutlined />,
+      label: <Link to="/about-us">About Us</Link>,
+    },
+    {
+      key: 'vaccination',
+      icon: <MedicineBoxOutlined />,
+      label: <Link to="/vaccination">Vaccination</Link>,
+    },
+    {
+      key: 'pricing',
+      icon: <DollarOutlined />,
+      label: <Link to="/pricing">Pricing</Link>,
+    },
+    {
+      key: 'register',
+      icon: <CalendarOutlined />,
+      label: <Link to="/register">Register Schedule</Link>,
+    },
+  ];
+
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: "#9989C5", // Custom primary color
-        },
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          padding: "10px 20px",
-          boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-          position: "sticky",
-          top: 0,
-          zIndex: 1000,
-          transition: "all 0.3s ease",
+    <div className="HomePage-Header-wrapper">
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "#9989C5",
+          },
+          components: {
+            Menu: {
+              horizontalItemBorderWidth: 0, // Remove bottom border of menu items
+            }
+          }
         }}
       >
-        {/* Logo Section */}
-        <Link
-          to="/"
-          style={{
-            textDecoration: "none",
-            color: "inherit",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginRight: "auto",
-            }}
-          >
-            <div
-              style={{
-                width: "50px",
-                height: "50px",
-                borderRadius: "50%",
-                backgroundColor: "#e0e0e0",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                overflow: "hidden",
-              }}
-            >
-              <img
-                src="src\assets\HomePage\VaccineLogo.jpg"
-                alt="Logo"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        <header className="HomePage-Header">
+          <div className="HomePage-Header-container">
+            {isMobile && (
+              <Button
+                icon={<MenuOutlined />}
+                onClick={() => setShowDrawer(true)}
+                className="HomePage-Header-menu-button"
               />
-            </div>
-            <h1
-              style={{
-                marginLeft: "10px",
-                marginRight: "10px",
-                fontSize: "24px",
-                fontWeight: "bold",
-                color: "#000",
-              }}
-            >
-              Vaccine Care
-            </h1>
+            )}
+            
+            <Link to="/" className="HomePage-Header-logo-link">
+              <div className="HomePage-Header-logo-container">
+                <img
+                  src="src/assets/HomePage/VaccineLogo.jpg"
+                  alt="Logo"
+                  className="HomePage-Header-logo-image"
+                />
+              </div>
+              <h1 className="HomePage-Header-title">
+                Vaccine Care
+              </h1>
+            </Link>
+
+            {isMobile && (
+              <Link to="/login">
+                <Button type="primary">Sign In</Button>
+              </Link>
+            )}
           </div>
-        </Link>
+        </header>
 
-        {/* Navigation Section */}
-        <Menu
-          mode="horizontal"
-          style={{
-            borderBottom: "none",
-            background: "transparent",
-            flexGrow: 1,
-          }}
+        {/* Submenu for desktop */}
+        {!isMobile && (
+          <div className="HomePage-Header-submenu-container">
+            <div className="HomePage-Header-submenu-wrapper">
+              <Menu
+                mode="horizontal"
+                className="HomePage-Header-desktop-menu"
+                items={menuItems}
+              />
+              <Link to="/login">
+                <Button type="primary" className="HomePage-Header-signin-button">
+                  Sign In
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Sidebar drawer for mobile */}
+        <Drawer
+          title="Menu"
+          placement="left"
+          onClose={() => setShowDrawer(false)}
+          open={showDrawer}
+          width={280}
         >
-          <Menu.Item key="home">
-            <Link to={"/"}>Home</Link>
-          </Menu.Item>
-          <Menu.Item key="about">
-            <Link to={"about-us"}>About Us</Link>
-          </Menu.Item>
-          <Menu.Item key="vaccination">
-            <Link to={"vaccination"}>Vaccination</Link>
-          </Menu.Item>
-          <Menu.Item key="pricing">
-            <Link to={"pricing"}>Pricing</Link>
-          </Menu.Item>
-          <Menu.Item key="register" icon={<CalendarOutlined />}>
-            Register Schedule
-          </Menu.Item>
-        </Menu>
-
-        {/* Sign In Button */}
-        <Link to="/login">
-          <Button type="primary" style={{ marginLeft: "20px" }}>
-            Sign In
-          </Button>
-        </Link>
-      </header>
-    </ConfigProvider>
+          <Menu
+            mode="vertical"
+            className="HomePage-Header-menu HomePage-Header-mobile-menu"
+            items={menuItems}
+            onClick={() => setShowDrawer(false)}
+          />
+        </Drawer>
+      </ConfigProvider>
+    </div>
   );
 };
 
