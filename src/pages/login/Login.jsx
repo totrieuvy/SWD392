@@ -1,8 +1,8 @@
 import { Button, Form, Input } from "antd";
-import Authentication from "../authentication/Authentication";
 import { useForm } from "antd/es/form/Form";
 import "./Login.scss";
 import { Link } from "react-router-dom";
+import Authentication from "../../components/authentication/Authentication";
 
 function Login() {
   const [form] = useForm();
