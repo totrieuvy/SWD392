@@ -6,12 +6,17 @@ import NotFoundPage from "./pages/error/NotFoundPage";
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
 import ForgotPassword from "./pages/forgotPassword/ForgotPassword";
+import SideBar from "./components/sidebar/SideBar";
 
 const App = () => {
   const router = createBrowserRouter([
     {
       path: "*",
       element: <NotFoundPage />,
+    },
+    {
+      path: "/sidebar",
+      element: <SideBar />,
     },
     {
       path: "/",
