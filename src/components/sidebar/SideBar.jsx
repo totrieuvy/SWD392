@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import "./Sidebar.scss";
 import { logout } from "../../redux/features/userSlice";
 
-const { Header, Content, Footer, Sider } = Layout;
+const { Content, Footer, Sider } = Layout;
 
 const siderStyle = {
   height: "100vh",
@@ -64,12 +64,18 @@ const Sidebar = () => {
           getItem("Change password", "/admin/changepassword"),
         ]),
         getItem("Human resources", "personnel", <TeamOutlined />, [
-          getItem("Manager", "/admin/manager"),
+          getItem("Manager", "manager"),
           getItem("Staff", "/admin/staff"),
         ]),
       ];
     } else if (user?.roleName === "manager") {
-      items = [getItem("Vaccine", "vaccine", <BarChartOutlined />)];
+      items = [
+        getItem("Vaccine", "vaccine", <BarChartOutlined />),
+        getItem("Human resources", "personnel", <UserOutlined />, [
+          getItem("Staff", "staff"),
+          getItem("Customer", "/admin/staff"),
+        ]),
+      ];
     }
 
     setMenuItems(items);
@@ -101,12 +107,12 @@ const Sidebar = () => {
         </div>
       </Sider>
       <Layout>
-        <Header
+        {/* <Header
           style={{
             padding: 0,
             background: colorBgContainer,
           }}
-        />
+        /> */}
         <Content
           style={{
             margin: "24px 16px 0",

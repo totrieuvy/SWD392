@@ -11,6 +11,8 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Vaccine from "./pages/ManagerPage/vaccine/Vaccine";
 import TotalAccount from "./pages/AdminPage/totalAccount/TotalAccount";
+import Manager from "./pages/AdminPage/manager/Manager";
+import Staff from "./pages/ManagerPage/staff/Staff";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -72,8 +74,8 @@ const App = () => {
               element: <TotalAccount />,
             },
             {
-              path: "profile/:id",
-              element: <div>dashboard</div>,
+              path: "manager",
+              element: <Manager />,
             },
             {
               path: "product",
@@ -100,8 +102,8 @@ const App = () => {
               element: <Vaccine />,
             },
             {
-              path: "profile/:id",
-              element: <div>dashboard</div>,
+              path: "staff",
+              element: <Staff />,
             },
             {
               path: "product",

@@ -17,7 +17,12 @@ function Login() {
 
   useEffect(() => {
     document.title = "Login";
-    form.resetFields();
+    form.resetFields(); // Call resetFields() first
+    form.setFieldsValue({
+      email: "",
+      password: "",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFinish = async (values) => {
@@ -27,7 +32,6 @@ function Login() {
         email: values.email,
         password: values.password,
       });
-      console.log(response);
 
       if (response && response.data) {
         const { token, roleName } = response.data.data;
@@ -36,11 +40,11 @@ function Login() {
         localStorage.setItem("token", token);
         dispatch(login(response.data.data));
 
-        if (roleName == "user") {
+        if (roleName === "user") {
           navigate("/");
-        } else if (roleName == "admin") {
+        } else if (roleName === "admin") {
           navigate("/admin");
-        } else if (roleName == "manager") {
+        } else if (roleName === "manager") {
           navigate("/manager");
         }
       }
@@ -50,6 +54,7 @@ function Login() {
       setLoading(false);
     }
   };
+
   return (
     <Authentication>
       <div className="containerer">
@@ -79,7 +84,7 @@ function Login() {
               rules={[
                 {
                   required: true,
-                  message: "Email cannot be blank!",
+                  message: "Password cannot be blank!",
                 },
               ]}
             >
