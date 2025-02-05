@@ -56,7 +56,7 @@ const Sidebar = () => {
     if (user?.roleName === "admin") {
       items = [
         getItem("Dashboard", "dashboard", <TeamOutlined />, [
-          getItem("Total account", "/admin/statistic/account"),
+          getItem("Total account", "dashboard/total-account"),
           getItem("Top 5 vaccine", "/admin/manager"),
         ]),
         getItem("Profile", "profile", <UserOutlined />, [
@@ -129,7 +129,7 @@ const Sidebar = () => {
             textAlign: "center",
           }}
         >
-          Ant Design ©{new Date().getFullYear()} Created by Ant UED
+          Vaccine Care ©{new Date().getFullYear()} Created by Vaccine Care
         </Footer>
       </Layout>
     </Layout>

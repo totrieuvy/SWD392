@@ -3,7 +3,7 @@ import { useForm } from "antd/es/form/Form";
 import "./Login.scss";
 import { Link, useNavigate } from "react-router-dom";
 import Authentication from "../../components/authentication/Authentication";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import api from "../../config/axios";
 import { useDispatch } from "react-redux";
@@ -14,6 +14,11 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "Login";
+    form.resetFields();
+  }, []);
 
   const handleFinish = async (values) => {
     setLoading(true);
