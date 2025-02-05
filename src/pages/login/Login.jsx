@@ -1,19 +1,59 @@
 import { Button, Form, Input } from "antd";
 import { useForm } from "antd/es/form/Form";
 import "./Login.scss";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Authentication from "../../components/authentication/Authentication";
+import { useState } from "react";
+import { toast } from "react-toastify";
+import api from "../../config/axios";
+import { useDispatch } from "react-redux";
+import { login } from "../../redux/features/userSlice";
 
 function Login() {
   const [form] = useForm();
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleFinish = async (values) => {
+    setLoading(true);
+    try {
+      const response = await api.post("user/login", {
+        email: values.email,
+        password: values.password,
+      });
+      console.log(response);
+
+      if (response && response.data) {
+        const { token, roleName } = response.data.data;
+        toast.success(response.data.message);
+
+        localStorage.setItem("token", token);
+        dispatch(login(response.data.data));
+
+        if (roleName == "user") {
+          navigate("/");
+        } else if (roleName == "admin") {
+          navigate("/admin");
+        } else if (roleName == "manager") {
+          navigate("/manager");
+        }
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login failed. Please try again!");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Authentication>
       <div className="containerer">
         <div className="Login">
           <h2 className="Login__title">Welcome back</h2>
-          <Form form={form} labelCol={{ span: 24 }}>
+          <Form form={form} labelCol={{ span: 24 }} onFinish={handleFinish}>
             <Form.Item
               label="Email"
+              name="email"
               rules={[
                 {
                   type: "email",
@@ -30,6 +70,7 @@ function Login() {
             </Form.Item>
             <Form.Item
               label="Password"
+              name="password"
               rules={[
                 {
                   required: true,
@@ -40,7 +81,7 @@ function Login() {
               <Input.Password placeholder="Enter your password" />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit" className="Login__button">
+              <Button type="primary" htmlType="submit" className="Login__button" loading={loading}>
                 Login
               </Button>
             </Form.Item>

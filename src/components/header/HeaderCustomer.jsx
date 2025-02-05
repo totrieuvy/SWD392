@@ -1,52 +1,77 @@
 import React, { useState, useEffect } from "react";
-import { ConfigProvider, Button, Menu, Drawer } from "antd";
-import { 
-  CalendarOutlined, 
+import { ConfigProvider, Button, Menu, Drawer, Dropdown } from "antd";
+import {
+  CalendarOutlined,
   MenuOutlined,
   HomeOutlined,
   InfoCircleOutlined,
   MedicineBoxOutlined,
-  DollarOutlined
+  DollarOutlined,
+  UserOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
-import { Link } from "react-router-dom";
-import './Header.css';
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import "./Header.css";
+import { logout } from "../../redux/features/userSlice";
 
 const Header = () => {
   const [showDrawer, setShowDrawer] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const user = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Hàm xử lý logout
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
+  const userMenu = (
+    <Menu>
+      <Menu.Item key="records" icon={<UserOutlined />}>
+        <Link to="/medical-records">Your Medical Records</Link>
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
 
   const menuItems = [
     {
-      key: 'home',
+      key: "home",
       icon: <HomeOutlined />,
       label: <Link to="/">Home</Link>,
     },
     {
-      key: 'about',
+      key: "about",
       icon: <InfoCircleOutlined />,
       label: <Link to="/about-us">About Us</Link>,
     },
     {
-      key: 'vaccination',
+      key: "vaccination",
       icon: <MedicineBoxOutlined />,
       label: <Link to="/vaccination">Vaccination</Link>,
     },
     {
-      key: 'pricing',
+      key: "pricing",
       icon: <DollarOutlined />,
       label: <Link to="/pricing">Pricing</Link>,
     },
     {
-      key: 'register',
+      key: "register",
       icon: <CalendarOutlined />,
       label: <Link to="/register">Register Schedule</Link>,
     },
@@ -61,9 +86,9 @@ const Header = () => {
           },
           components: {
             Menu: {
-              horizontalItemBorderWidth: 0, // Remove bottom border of menu items
-            }
-          }
+              horizontalItemBorderWidth: 0,
+            },
+          },
         }}
       >
         <header className="HomePage-Header">
@@ -75,54 +100,51 @@ const Header = () => {
                 className="HomePage-Header-menu-button"
               />
             )}
-            
+
             <Link to="/" className="HomePage-Header-logo-link">
               <div className="HomePage-Header-logo-container">
-                <img
-                  src="src/assets/HomePage/VaccineLogo.jpg"
-                  alt="Logo"
-                  className="HomePage-Header-logo-image"
-                />
+                <img src="src/assets/HomePage/VaccineLogo.jpg" alt="Logo" className="HomePage-Header-logo-image" />
               </div>
-              <h1 className="HomePage-Header-title">
-                Vaccine Care
-              </h1>
+              <h1 className="HomePage-Header-title">Vaccine Care</h1>
             </Link>
 
-            {isMobile && (
-              <Link to="/login">
-                <Button type="primary">Sign In</Button>
-              </Link>
-            )}
+            {isMobile &&
+              (user ? (
+                <Dropdown overlay={userMenu} trigger={["click"]}>
+                  <Button type="text" className="HomePage-Header-welcome">
+                    Welcome, {user.userName}
+                  </Button>
+                </Dropdown>
+              ) : (
+                <Link to="/login">
+                  <Button type="primary">Sign In</Button>
+                </Link>
+              ))}
           </div>
         </header>
 
-        {/* Submenu for desktop */}
         {!isMobile && (
           <div className="HomePage-Header-submenu-container">
             <div className="HomePage-Header-submenu-wrapper">
-              <Menu
-                mode="horizontal"
-                className="HomePage-Header-desktop-menu"
-                items={menuItems}
-              />
-              <Link to="/login">
-                <Button type="primary" className="HomePage-Header-signin-button">
-                  Sign In
-                </Button>
-              </Link>
+              <Menu mode="horizontal" className="HomePage-Header-desktop-menu" items={menuItems} />
+              {user ? (
+                <Dropdown overlay={userMenu} trigger={["click"]}>
+                  <Button type="text" className="HomePage-Header-welcome">
+                    Welcome, {user.userName}
+                  </Button>
+                </Dropdown>
+              ) : (
+                <Link to="/login">
+                  <Button type="primary" className="HomePage-Header-signin-button">
+                    Sign In
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         )}
 
-        {/* Sidebar drawer for mobile */}
-        <Drawer
-          title="Menu"
-          placement="left"
-          onClose={() => setShowDrawer(false)}
-          open={showDrawer}
-          width={280}
-        >
+        <Drawer title="Menu" placement="left" onClose={() => setShowDrawer(false)} open={showDrawer} width={280}>
           <Menu
             mode="vertical"
             className="HomePage-Header-menu HomePage-Header-mobile-menu"
