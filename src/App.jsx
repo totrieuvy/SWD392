@@ -9,6 +9,7 @@ import ForgotPassword from "./pages/forgotPassword/ForgotPassword";
 import SideBar from "./components/sidebar/SideBar";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import Vaccine from "./pages/ManagerPage/vaccine/Vaccine";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -94,8 +95,8 @@ const App = () => {
           element: <SideBar />,
           children: [
             {
-              path: "dashboard",
-              element: <div>dashboard</div>,
+              path: "vaccine",
+              element: <Vaccine />,
             },
             {
               path: "profile/:id",

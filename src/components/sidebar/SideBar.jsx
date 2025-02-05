@@ -69,24 +69,7 @@ const Sidebar = () => {
         ]),
       ];
     } else if (user?.roleName === "manager") {
-      items = [
-        getItem("Hồ sơ", "profile", <UserOutlined />, [
-          getItem("Thông tin cá nhân", `/manager/profile/${user.id}`),
-          getItem("Đổi mật khẩu", "/manager/changepassword"),
-        ]),
-        getItem("Quản lí nhân sự", "manager/manage", <TeamOutlined />, [
-          getItem("Danh sách nhân viên", "/manager/staff"),
-          getItem("Xem lịch của tất cả nhân viên", "/manager/staff/view"),
-          getItem("Lịch làm việc", "/manager/staff/assign"),
-          getItem("Năng suất theo giai đoạn", "/manager/staff/range"),
-        ]),
-        getItem("Thống kê", "manager/transaction", <BarChartOutlined />, [
-          getItem("Tổng đơn hàng", "/manager/transaction/total"),
-          getItem("Chính sách ưu đãi", "/manager/promotion"),
-          getItem("Sản phẩm bán chạy nhất", "/manager/topproductsell"),
-          getItem("So sánh sản phẩm", "/manager/salecomparision"),
-        ]),
-      ];
+      items = [getItem("Vaccine", "vaccine", <BarChartOutlined />)];
     }
 
     setMenuItems(items);
