@@ -1,15 +1,21 @@
-import { Button, Input, Table, Tag } from "antd";
+import { Button, Form, Input, Modal, Popconfirm, Table, Tag } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../../config/axios";
 import dayjs from "dayjs";
 import { SearchOutlined } from "@ant-design/icons";
 
 import "./Manufacture.scss";
+import { useForm } from "antd/es/form/Form";
+import { toast } from "react-toastify";
 
 function Manufacture() {
   const [dataSource, setDataSource] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [open, setOpen] = useState(false);
+  const [form] = useForm();
+  const [loading, setLoading] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
 
   useEffect(() => {
     document.title = "Manufacture";
@@ -71,11 +77,96 @@ function Manufacture() {
       key: "createdAt",
       render: (date) => dayjs(date).format("YYYY-MM-DD HH:mm"),
     },
+    {
+      title: "Action",
+      dataIndex: "manufacturerId",
+      key: "manufacturerId",
+      render: (manufacturerId, record) => {
+        return (
+          <>
+            <Button
+              type="primary"
+              onClick={() => {
+                setOpen(true);
+                form.setFieldsValue(record);
+                setIsUpdate(true);
+              }}
+            >
+              Update
+            </Button>
+            <Popconfirm
+              title="Delete manufacture?"
+              description="Are you sure to delete this manufacture"
+              onConfirm={() => handleDelete(manufacturerId)}
+            >
+              <Button type="primary" danger>
+                Delete
+              </Button>
+            </Popconfirm>
+          </>
+        );
+      },
+    },
   ];
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`v1/manufacturer/${id}`);
+      toast.success("Manufacture deleted successfully!");
+      fetchData();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleSearch = () => {
     const filtered = dataSource.filter((item) => item.name.toLowerCase().includes(searchText.toLowerCase()));
     setFilteredData(filtered);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+  };
+
+  const handleOpenModal = () => {
+    form.resetFields();
+    setOpen(true);
+  };
+
+  const handleSubmit = async (values) => {
+    console.log(values);
+    setLoading(true);
+    try {
+      if (values.id) {
+        await api.put(`v1/manufacturer/${values.id}`, {
+          name: values.name,
+          shortName: values.shortName,
+          description: values.description,
+          countryName: values.countryName,
+          countryCode: values.countryCode,
+          isActive: true,
+        });
+        toast.success("Manufacture updated successfully!");
+        fetchData();
+      } else {
+        await api.post("v1/manufacturer", {
+          name: values.name,
+          shortName: values.shortName,
+          description: values.description,
+          countryName: values.countryName,
+          countryCode: values.countryCode,
+          isActive: true,
+        });
+        toast.success("Manufacture added successfully!");
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      form.resetFields();
+      setLoading(false);
+      handleCancel();
+    }
   };
 
   return (
@@ -95,10 +186,66 @@ function Manufacture() {
         </div>
 
         <div>
-          <Button type="primary">Add new manufacture</Button>
+          <Button type="primary" onClick={handleOpenModal}>
+            Add new manufacture
+          </Button>
         </div>
       </div>
       <Table dataSource={filteredData} columns={columns} rowKey="manufacturerId" />
+      <Modal
+        open={open}
+        title={`${isUpdate ? "Update" : "Add"} manufacture`}
+        onCancel={handleCancel}
+        footer={[
+          <Button key="back" onClick={handleCancel}>
+            Return
+          </Button>,
+          <Button key="submit" type="primary" loading={loading} onClick={() => form.submit()}>
+            Submit
+          </Button>,
+        ]}
+      >
+        <Form form={form} layout="vertical" onFinish={handleSubmit} labelCol={{ span: 24 }}>
+          <Form.Item label="manufacturerId" name="manufacturerId" hidden>
+            <Input placeholder="Enter name" />
+          </Form.Item>
+          <Form.Item label="Name" name="name" rules={[{ required: true, message: "Please enter name!" }]}>
+            <Input placeholder="Enter name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Short Name"
+            name="shortName"
+            rules={[{ required: true, message: "Please enter short name!" }]}
+          >
+            <Input placeholder="Enter short name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Description"
+            name="description"
+            rules={[{ required: true, message: "Please enter description!" }]}
+          >
+            <Input.TextArea placeholder="Enter description" rows={3} />
+          </Form.Item>
+
+          <Form.Item
+            label="Country Name"
+            name="countryName"
+            rules={[{ required: true, message: "Please enter country name!" }]}
+          >
+            <Input placeholder="Enter country name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Country Code"
+            name="countryCode"
+            rules={[{ required: true, message: "Please enter country code!" }]}
+          >
+            <Input placeholder="Enter country code" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
