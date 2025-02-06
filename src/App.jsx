@@ -8,19 +8,22 @@ import Register from "./pages/register/Register";
 import ForgotPassword from "./pages/forgotPassword/ForgotPassword";
 import SideBar from "./components/sidebar/SideBar";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
 import Vaccine from "./pages/ManagerPage/vaccine/Vaccine";
 import TotalAccount from "./pages/AdminPage/totalAccount/TotalAccount";
 import Manager from "./pages/AdminPage/manager/Manager";
 import Staff from "./pages/ManagerPage/staff/Staff";
+import Manufacture from "./pages/ManagerPage/manufacture/Manufacture";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
-  const user = useSelector((state) => state.user);
-  if (roleName == user.roleName) {
-    return <Outlet />;
+  const user = useSelector((state) => state?.user);
+  if (user?.roleName) {
+    if (roleName == user?.roleName) {
+      return <Outlet />;
+    } else {
+      return <Navigate to="/login" />;
+    }
   } else {
-    toast.error("You do not have permission to access this page!");
     return <Navigate to="/login" />;
   }
 };
@@ -100,6 +103,10 @@ const App = () => {
             {
               path: "vaccine",
               element: <Vaccine />,
+            },
+            {
+              path: "manufacture",
+              element: <Manufacture />,
             },
             {
               path: "staff",

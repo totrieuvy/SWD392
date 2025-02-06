@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { BarChartOutlined, TeamOutlined, UserOutlined, PoweroffOutlined } from "@ant-design/icons";
+import {
+  TeamOutlined,
+  UserOutlined,
+  PoweroffOutlined,
+  AreaChartOutlined,
+  MedicineBoxOutlined,
+  ToolOutlined,
+} from "@ant-design/icons";
 import { Layout, Menu, Button, theme } from "antd";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -55,7 +62,7 @@ const Sidebar = () => {
 
     if (user?.roleName === "admin") {
       items = [
-        getItem("Dashboard", "dashboard", <TeamOutlined />, [
+        getItem("Dashboard", "dashboard", <AreaChartOutlined />, [
           getItem("Total account", "dashboard/total-account"),
           getItem("Top 5 vaccine", "/admin/manager"),
         ]),
@@ -70,8 +77,9 @@ const Sidebar = () => {
       ];
     } else if (user?.roleName === "manager") {
       items = [
-        getItem("Vaccine", "vaccine", <BarChartOutlined />),
-        getItem("Human resources", "personnel", <UserOutlined />, [
+        getItem("Vaccine", "vaccine", <MedicineBoxOutlined />),
+        getItem("Manufacture", "manufacture", <ToolOutlined />),
+        getItem("Human resources", "personnel", <TeamOutlined />, [
           getItem("Staff", "staff"),
           getItem("Customer", "/admin/staff"),
         ]),
