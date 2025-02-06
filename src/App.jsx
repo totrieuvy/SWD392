@@ -13,6 +13,7 @@ import TotalAccount from "./pages/AdminPage/totalAccount/TotalAccount";
 import Manager from "./pages/AdminPage/manager/Manager";
 import Staff from "./pages/ManagerPage/staff/Staff";
 import Manufacture from "./pages/ManagerPage/manufacture/Manufacture";
+import RegisterSchedule from "./pages/RegisterSchedule/RegisterSchedule";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -49,6 +50,10 @@ const App = () => {
         {
           path: "about-us",
           element: <AboutUs />,
+        },
+        {
+          path: "register-schedule",
+          element: <RegisterSchedule />,
         },
       ],
     },
