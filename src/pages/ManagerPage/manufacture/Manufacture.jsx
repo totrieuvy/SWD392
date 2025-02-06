@@ -137,8 +137,8 @@ function Manufacture() {
     console.log(values);
     setLoading(true);
     try {
-      if (values.id) {
-        await api.put(`v1/manufacturer/${values.id}`, {
+      if (values.manufacturerId) {
+        await api.put(`v1/manufacturer/${values.manufacturerId}`, {
           name: values.name,
           shortName: values.shortName,
           description: values.description,
