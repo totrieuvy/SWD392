@@ -37,7 +37,12 @@ const PatientSection = () => {
         },
       }}
     >
-      <Card title="Patient Info" className="max-w-6xl mx-auto">
+      <Card title="Patient Info" className="max-w-6xl mx-auto"
+         headStyle={{ 
+          backgroundColor: '#65558F', 
+          color: '#ffffff'
+        }}
+      >
         <Form
           form={form}
           layout="vertical"
@@ -129,7 +134,7 @@ const PatientSection = () => {
             name="address"
             rules={[{ required: true, message: 'Please input your address' }]}
           >
-            <Input.TextArea placeholder="address" rows={4} />
+            <Input placeholder="address" rows={4} />
           </Form.Item>
         </Form>
       </Card>
