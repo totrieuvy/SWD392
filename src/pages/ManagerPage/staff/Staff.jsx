@@ -1,7 +1,8 @@
-import { Button, DatePicker, Form, Input, Modal, Radio, Select, Table, Tag } from "antd";
+import { Button, DatePicker, Form, Input, Modal, Popconfirm, Radio, Select, Table, Tag } from "antd";
 import { useEffect } from "react";
 import { useState } from "react";
-import { SearchOutlined } from "@ant-design/icons";
+import { SearchOutlined, EyeOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 import api from "../../../config/axios";
 import "./Staff.scss";
 import { useForm } from "antd/es/form/Form";
@@ -12,12 +13,23 @@ function Staff() {
   const [filteredData, setFilteredData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [open, setOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState(null);
   const [form] = useForm();
+  const [isUpdate, setIsUpdate] = useState(false);
 
   useEffect(() => {
     document.title = "Staff";
   }, []);
+
+  const handleViewDetail = (staffId) => {
+    const staff = dataSource.find((item) => item.staffId === staffId);
+    if (staff) {
+      setSelectedStaff(staff);
+      setDetailOpen(true);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -53,16 +65,22 @@ function Staff() {
       sorter: (a, b) => a.phone.localeCompare(b.phone),
     },
     {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-      sorter: (a, b) => a.email.localeCompare(b.email),
+      title: "Date of Birth",
+      dataIndex: "dob",
+      key: "dob",
+      sorter: (a, b) => a.dob.localeCompare(b.dob),
     },
     {
-      title: "Address",
-      dataIndex: "address",
-      key: "address",
-      sorter: (a, b) => a.address.localeCompare(b.address),
+      title: "Gender",
+      dataIndex: "gender",
+      key: "gender",
+      sorter: (a, b) => a.gender.localeCompare(b.gender),
+    },
+    {
+      title: "Blood Type",
+      dataIndex: "bloodType",
+      key: "bloodType",
+      sorter: (a, b) => a.bloodType.localeCompare(b.bloodType),
     },
     {
       title: "Role",
@@ -77,34 +95,88 @@ function Staff() {
       sorter: (a, b) => a.status.localeCompare(b.status),
       render: (status) => (status === "Active" ? <Tag color="green">Active</Tag> : <Tag color="red">InActive</Tag>),
     },
+    {
+      title: "Action",
+      dataIndex: "staffId",
+      key: "staffId",
+      render: (staffId, record) => (
+        <div className="Staff__action">
+          <Button
+            type="link"
+            icon={<EyeOutlined style={{ fontSize: "20px" }} />}
+            onClick={() => handleViewDetail(staffId)}
+          />
+          <Button
+            type="primary"
+            style={{ marginRight: 10 }}
+            onClick={() => {
+              setOpen(true);
+              setIsUpdate(true);
+
+              form.setFieldsValue({
+                ...record,
+                dob: record.dob ? dayjs(record.dob, "DD-MM-YYYY") : null,
+              });
+            }}
+          >
+            Edit
+          </Button>
+          <Popconfirm
+            title="Delete staff"
+            description="Are you sure to delete this staff?"
+            onConfirm={() => handleDelete(staffId)}
+          >
+            <Button type="primary" danger>
+              Delete
+            </Button>
+          </Popconfirm>
+        </div>
+      ),
+    },
   ];
+
+  const handleDelete = async (staffId) => {
+    try {
+      await api.delete(`v1/staff/${staffId}`);
+      toast.success("Delete staff successful");
+      fetchData();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleCancel = () => {
     setOpen(false);
   };
 
   const handleOpenModal = () => {
+    form.resetFields();
     setOpen(true);
   };
 
-  const handleOk = async () => {
+  const handleOk = async (values) => {
+    setLoading(true);
     try {
-      const values = await form.validateFields();
+      if (values.staffId) {
+        await api.put(`v1/staff/${values.staffId}`, values);
+        toast.success("Update staff successful");
+      } else {
+        const values = await form.validateFields();
 
-      // Chuyển đổi định dạng ngày sinh
-      const formattedValues = {
-        ...values,
-        dob: values.dob.format("YYYY-MM-DD"),
-        status: "Active", // Mặc định là Active
-      };
+        // Chuyển đổi định dạng ngày sinh
+        const formattedValues = {
+          ...values,
+          dob: values.dob.format("DD-MM-YYYY"),
+        };
 
-      setLoading(true);
-      await api.post("v1/staff", formattedValues);
-      toast.success("add staff successful");
-      setLoading(false);
-      setOpen(false);
-      form.resetFields();
-      fetchData(); // Gọi lại danh sách sau khi thêm
+        setLoading(true);
+        await api.post("v1/staff", formattedValues);
+        toast.success("add staff successful");
+        setLoading(false);
+        setOpen(false);
+        form.resetFields();
+        fetchData();
+      }
     } catch (error) {
       setLoading(false);
       console.error("Error:", error);
@@ -137,7 +209,7 @@ function Staff() {
       <Table columns={columns} dataSource={filteredData} rowKey="id" scroll={{ x: "max-content", y: 400 }} />
       <Modal
         open={open}
-        title="Add new staff"
+        title={`${isUpdate ? "Update" : "Add"} staff`}
         onCancel={handleCancel}
         footer={[
           <Button key="back" onClick={handleCancel}>
@@ -149,6 +221,9 @@ function Staff() {
         ]}
       >
         <Form form={form} labelCol={{ span: 24 }} onFinish={handleOk}>
+          <Form.Item label="staffId" name="staffId" hidden>
+            <Input />
+          </Form.Item>
           <Form.Item
             label="Username"
             name="username"
@@ -193,6 +268,31 @@ function Staff() {
             </Select>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal open={detailOpen} title="Staff Details" onCancel={() => setDetailOpen(false)} footer={null}>
+        {selectedStaff && (
+          <div>
+            <p>
+              <strong>Name:</strong> {selectedStaff.fullName}
+            </p>
+            <p>
+              <strong>Email:</strong> {selectedStaff.email}
+            </p>
+            <p>
+              <strong>Phone:</strong> {selectedStaff.phone}
+            </p>
+            <p>
+              <strong>Address:</strong> {selectedStaff.address}
+            </p>
+            <p>
+              <strong>Role:</strong> {selectedStaff.role}
+            </p>
+            <p>
+              <strong>Status:</strong> {selectedStaff.status}
+            </p>
+          </div>
+        )}
       </Modal>
     </div>
   );

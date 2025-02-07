@@ -8,13 +8,19 @@
   &__above {
     display: flex;
     justify-content: space-between;
-    flex-wrap: wrap; // Đảm bảo các phần tử xuống hàng khi màn hình nhỏ
+    flex-wrap: wrap;
 
     > div {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
     }
+  }
+
+  .Staff__action {
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
 
   // Responsive cho màn hình nhỏ

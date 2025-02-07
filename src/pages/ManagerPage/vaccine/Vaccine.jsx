@@ -171,10 +171,10 @@ function Vaccine() {
     setLoading(true);
 
     try {
-      // if (values.image) {
-      //   const url = await uploadFile(values.image.file.originFileObj);
-      //   values.image = url;
-      // }
+      if (values.image) {
+        const url = await uploadFile(values.image.file.originFileObj);
+        values.image = url;
+      }
 
       const response = await api.post("v1/vaccine", {
         vaccineName: values.vaccineName,
@@ -286,7 +286,7 @@ function Vaccine() {
           </Form.Item>
 
           <Form.Item label="Image" name="image" rules={[{ required: true, message: "Please upload image" }]}>
-            {/* <Upload
+            <Upload
               action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
               listType="picture-card"
               fileList={fileList}
@@ -294,8 +294,7 @@ function Vaccine() {
               onChange={handleChange}
             >
               {fileList.length >= 8 ? null : uploadButton}
-            </Upload> */}
-            <Input />
+            </Upload>
           </Form.Item>
 
           <Form.Item
