@@ -73,7 +73,7 @@ const Header = () => {
     {
       key: "register",
       icon: <CalendarOutlined />,
-      label: <Link to="/register">Register Schedule</Link>,
+      label: <Link to="/register-schedule">Register Schedule</Link>,
     },
   ];
 

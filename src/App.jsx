@@ -1,6 +1,5 @@
 import { Navigate, Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 import CustomerApp from "./layout/Customer/Customer";
-import HomePage from "./pages/Customer/HomePage/HomePage";
 import AboutUs from "./pages/aboutUs/AboutUs";
 import NotFoundPage from "./pages/error/NotFoundPage";
 import Login from "./pages/login/Login";
@@ -15,6 +14,10 @@ import Staff from "./pages/ManagerPage/staff/Staff";
 import Manufacture from "./pages/ManagerPage/manufacture/Manufacture";
 import TotalRevenue from "./pages/AdminPage/revenue/TotalRevenue";
 import RegisterSchedule from "./pages/RegisterSchedule/RegisterSchedule";
+
+
+import VaccineInfo from "./pages/VaccineInfo/VaccineInfo";
+import HomePage from "./pages/HomePage/HomePage";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -56,6 +59,10 @@ const App = () => {
           path: "register-schedule",
           element: <RegisterSchedule />,
         },
+        {
+          path: "vaccine-info",
+          element: <VaccineInfo/>
+        }
       ],
     },
     {
