@@ -10,7 +10,12 @@ const GuardianSection = () => {
   ];
 
   return (
-    <Card title="Guardian Info" className="max-w-6xl mx-auto mt-4">
+    <Card title="Guardian Info" className="max-w-6xl mx-auto mt-4"
+    headStyle={{ 
+      backgroundColor: '#65558F', 
+      color: '#ffffff'
+    }}
+    >
       <Form
         layout="vertical"
         requiredMark={false}
