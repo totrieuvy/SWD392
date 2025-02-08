@@ -253,14 +253,18 @@ function Staff() {
           <Form.Item label="Date of Birth" name="dob" rules={[{ required: true, message: "Please input your dob!" }]}>
             <DatePicker />
           </Form.Item>
-          <Form.Item label="Gender" rules={[{ required: true, message: "Please input your dob!" }]}>
-            <Radio.Group name="gender">
+          <Form.Item label="Gender" name="gender" rules={[{ required: true, message: "Please input your gender!" }]}>
+            <Radio.Group>
               <Radio value="Male">Male</Radio>
               <Radio value="Female">Female</Radio>
             </Radio.Group>
           </Form.Item>
-          <Form.Item label="Blood Type" rules={[{ required: true, message: "Please input your dob!" }]}>
-            <Select name="bloodType">
+          <Form.Item
+            label="Blood Type"
+            name="bloodType"
+            rules={[{ required: true, message: "Please input your dob!" }]}
+          >
+            <Select>
               <Select.Option value="A">A</Select.Option>
               <Select.Option value="B">B</Select.Option>
               <Select.Option value="AB">AB</Select.Option>
@@ -274,22 +278,31 @@ function Staff() {
         {selectedStaff && (
           <div>
             <p>
-              <strong>Name:</strong> {selectedStaff.fullName}
+              <strong>Tên:</strong> {selectedStaff.username}
             </p>
             <p>
               <strong>Email:</strong> {selectedStaff.email}
             </p>
             <p>
-              <strong>Phone:</strong> {selectedStaff.phone}
+              <strong>Họ và tên:</strong> {selectedStaff.fullName}
             </p>
             <p>
-              <strong>Address:</strong> {selectedStaff.address}
+              <strong>Điện thoại:</strong> {selectedStaff.phone}
             </p>
             <p>
-              <strong>Role:</strong> {selectedStaff.role}
+              <strong>Địa chỉ:</strong> {selectedStaff.address}
             </p>
             <p>
-              <strong>Status:</strong> {selectedStaff.status}
+              <strong>Ngày sinh:</strong> {selectedStaff.dob}
+            </p>
+            <p>
+              <strong>Giới tính:</strong> {selectedStaff.gender}
+            </p>
+            <p>
+              <strong>Vai trò:</strong> {selectedStaff.role}
+            </p>
+            <p>
+              <strong>Trạng thái:</strong> {selectedStaff.status}
             </p>
           </div>
         )}

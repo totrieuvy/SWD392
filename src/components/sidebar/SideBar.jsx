@@ -65,6 +65,7 @@ const Sidebar = () => {
         getItem("Dashboard", "dashboard", <AreaChartOutlined />, [
           getItem("Total account", "dashboard/total-account"),
           getItem("Total revenue", "dashboard/total-revenue"),
+          getItem("Total vaccine", "dashboard/total-vaccine"),
         ]),
         getItem("Profile", "profile", <UserOutlined />, [
           getItem("View profile", `/admin/profile/${user.id}`),

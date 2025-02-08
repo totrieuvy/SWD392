@@ -15,9 +15,9 @@ import Manufacture from "./pages/ManagerPage/manufacture/Manufacture";
 import TotalRevenue from "./pages/AdminPage/revenue/TotalRevenue";
 import RegisterSchedule from "./pages/RegisterSchedule/RegisterSchedule";
 
-
 import VaccineInfo from "./pages/VaccineInfo/VaccineInfo";
 import HomePage from "./pages/HomePage/HomePage";
+import TotalVaccine from "./pages/AdminPage/totalVaccine/TotalVaccine";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -61,8 +61,8 @@ const App = () => {
         },
         {
           path: "vaccine-info",
-          element: <VaccineInfo/>
-        }
+          element: <VaccineInfo />,
+        },
       ],
     },
     {
@@ -88,6 +88,10 @@ const App = () => {
             {
               path: "dashboard/total-account",
               element: <TotalAccount />,
+            },
+            {
+              path: "dashboard/total-vaccine",
+              element: <TotalVaccine />,
             },
             {
               path: "manager",
