@@ -1,4 +1,4 @@
-import { Table, Tag, Input, Button, Modal, Image, Form, InputNumber, Select, Upload } from "antd";
+import { Table, Tag, Input, Button, Modal, Image, Form, InputNumber, Select, Upload, Popconfirm } from "antd";
 import { useEffect, useState } from "react";
 import { SearchOutlined } from "@ant-design/icons";
 import api from "../../../config/axios";
@@ -20,6 +20,8 @@ function Vaccine() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [fileList, setFileList] = useState([]);
+  const [isUpdate, setIsUpdate] = useState(false);
+
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
       file.preview = await getBase64(file.originFileObj);
@@ -156,13 +158,70 @@ function Vaccine() {
       sorter: (a, b) => a.isActive - b.isActive,
       render: (isActive) => (isActive ? <Tag color="green">Active</Tag> : <Tag color="red">Inactive</Tag>),
     },
+    {
+      title: "Action",
+      dataIndex: "vaccineId",
+      key: "vaccineId",
+      render: (vaccineId, record) => (
+        <div>
+          <Button
+            type="primary"
+            style={{ marginRight: 5 }}
+            onClick={() => {
+              console.log("Record:", record); // Kiểm tra dữ liệu trước khi set vào form
+
+              setIsUpdate(true);
+              form.setFieldsValue({
+                ...record,
+                manufacturerId: manufacturers.find((m) => m.name === record.manufacturerName)?.manufacturerId || null,
+              });
+
+              setOpen(true);
+              if (record.image) {
+                setFileList([
+                  {
+                    name: "image.png",
+                    status: "done",
+                    url: record.image,
+                  },
+                ]);
+              }
+            }}
+          >
+            Edit
+          </Button>
+          <Popconfirm
+            title="Delete vaccine"
+            description="Are you sure to delete this vaccine?"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={() => handleDelete(vaccineId)}
+          >
+            <Button type="primary" danger>
+              Delete
+            </Button>
+          </Popconfirm>
+        </div>
+      ),
+    },
   ];
+
+  const handleDelete = async (vaccineId) => {
+    try {
+      await api.delete(`v1/vaccine/${vaccineId}`);
+      toast.success("Delete vaccine successfully");
+      fetchData();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleCancel = () => {
     setOpen(false);
   };
 
   const handleOpenModal = () => {
+    form.resetFields();
     setOpen(true);
   };
 
@@ -176,26 +235,45 @@ function Vaccine() {
         values.image = url;
       }
 
-      const response = await api.post("v1/vaccine", {
-        vaccineName: values.vaccineName,
-        description: values.description,
-        minAge: values.minAge,
-        maxAge: values.maxAge,
-        numberDose: values.numberDose,
-        duration: values.duration,
-        unit: values.unit,
-        image: values.image,
-        manufacturerId: values.manufacturerId,
-        price: values.price,
-        isActive: true,
-      });
-      toast.success("Add vaccine sucessfully");
-      handleCancel();
-      fetchData();
-      form.resetFields();
-      setLoading(false);
+      if (values.vaccineId) {
+        await api.put(`v1/vaccine/${values.vaccineId}`, {
+          vaccineName: values.vaccineName,
+          description: values.description,
+          minAge: values.minAge,
+          maxAge: values.maxAge,
+          numberDose: values.numberDose,
+          duration: values.duration,
+          unit: values.unit,
+          image: values.image,
+          manufacturerId: values.manufacturerId,
+          price: values.price,
+          isActive: true,
+        });
+        toast.success("Update vaccine sucessfully");
+      } else {
+        await api.post("v1/vaccine", {
+          vaccineName: values.vaccineName,
+          description: values.description,
+          minAge: values.minAge,
+          maxAge: values.maxAge,
+          numberDose: values.numberDose,
+          duration: values.duration,
+          unit: values.unit,
+          image: values.image,
+          manufacturerId: values.manufacturerId,
+          price: values.price,
+          isActive: true,
+        });
+
+        toast.success("Add vaccine sucessfully");
+      }
     } catch (error) {
       console.log(error);
+    } finally {
+      fetchData();
+      handleCancel();
+      form.resetFields();
+      setLoading(false);
     }
   };
 
@@ -225,7 +303,7 @@ function Vaccine() {
       <Table columns={columns} dataSource={filteredData} rowKey="id" scroll={{ x: "max-content", y: 400 }} />
       <Modal
         open={open}
-        title="Add new vaccine"
+        title={`${isUpdate ? "Update" : "Add"} vaccine`}
         onCancel={handleCancel}
         footer={[
           <Button key="back" onClick={handleCancel}>
@@ -237,6 +315,9 @@ function Vaccine() {
         ]}
       >
         <Form form={form} labelCol={{ span: 24 }} onFinish={handleSubmitForm}>
+          <Form.Item label="vaccineId" name="vaccineId" hidden>
+            <Input />
+          </Form.Item>
           <Form.Item
             label="Vaccine Name"
             name="vaccineName"
@@ -245,7 +326,11 @@ function Vaccine() {
             <Input />
           </Form.Item>
 
-          <Form.Item label="Description" name="description">
+          <Form.Item
+            label="Description"
+            name="description"
+            rules={[{ required: true, message: "Please enter description" }]}
+          >
             <Input.TextArea rows={3} />
           </Form.Item>
 
@@ -262,7 +347,7 @@ function Vaccine() {
             name="maxAge"
             rules={[{ required: true, type: "number", message: "Please enter maximum age" }]}
           >
-            <InputNumber min={0} />
+            <InputNumber min={0} max={8} />
           </Form.Item>
 
           <Form.Item
@@ -281,8 +366,12 @@ function Vaccine() {
             <InputNumber min={0} />
           </Form.Item>
 
-          <Form.Item label="Unit" name="unit" rules={[{ required: true, message: "Please enter the unit" }]}>
-            <Input />
+          <Form.Item label="Unit" name="unit" rules={[{ required: true, message: "Please select the unit" }]}>
+            <Select placeholder="Select unit">
+              <Select.Option value="years">Years</Select.Option>
+              <Select.Option value="months">Months</Select.Option>
+              <Select.Option value="days">Days</Select.Option>
+            </Select>
           </Form.Item>
 
           <Form.Item label="Image" name="image" rules={[{ required: true, message: "Please upload image" }]}>
@@ -320,6 +409,19 @@ function Vaccine() {
           </Form.Item>
         </Form>
       </Modal>
+      {previewImage && (
+        <Image
+          wrapperStyle={{
+            display: "none",
+          }}
+          preview={{
+            visible: previewOpen,
+            onVisibleChange: (visible) => setPreviewOpen(visible),
+            afterOpenChange: (visible) => !visible && setPreviewImage(""),
+          }}
+          src={previewImage}
+        />
+      )}
     </div>
   );
 }
