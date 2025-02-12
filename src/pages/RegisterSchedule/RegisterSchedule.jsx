@@ -8,8 +8,7 @@ export default function RegisterSchedule() {
     <>
     <br/>
       <PatientSection/>
-      <br/>
-      <GuardianSection/>
+     
       <br/>
       <ServiceSection/>
     </>
