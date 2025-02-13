@@ -59,13 +59,7 @@ export default function ServiceSection() {
             {serviceType === 'Vaccination Package' && <VaccinationPackageSection />}
             {serviceType === 'Single Vaccination' && <SingleVaccinationSection />}
             <br/>
-            <Form.Item
-              label="Vaccination Center"
-              name="vaccination center"
-              rules={[{ required: true, message: 'Please input vaccination center' }]}
-            >
-              <Input placeholder="vaccination center" rows={4} />
-            </Form.Item>
+         
 
             <Form.Item
               label="Vaccination Date"
