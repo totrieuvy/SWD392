@@ -79,6 +79,7 @@ const Sidebar = () => {
     } else if (user?.roleName === "manager") {
       items = [
         getItem("Vaccine", "vaccine", <MedicineBoxOutlined />),
+        getItem("Package Vaccine", "package-vaccine", <MedicineBoxOutlined />),
         getItem("Manufacture", "manufacture", <ToolOutlined />),
         getItem("Human resources", "personnel", <TeamOutlined />, [
           getItem("Staff", "staff"),

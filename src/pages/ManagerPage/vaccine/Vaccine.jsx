@@ -1,4 +1,4 @@
-import { Table, Tag, Input, Button, Modal, Image, Form, InputNumber, Select, Upload, Popconfirm } from "antd";
+import { Table, Tag, Input, Button, Modal, Image, Form, InputNumber, Select, Upload, Popconfirm, Col, Row } from "antd";
 import { useEffect, useState } from "react";
 import { SearchOutlined } from "@ant-design/icons";
 import api from "../../../config/axios";
@@ -57,10 +57,6 @@ function Vaccine() {
       reader.onerror = (error) => reject(error);
     });
 
-  useEffect(() => {
-    document.title = "Vaccine";
-  }, []);
-
   const fetchData = async () => {
     try {
       const response = await api.get("v1/vaccine");
@@ -77,6 +73,7 @@ function Vaccine() {
 
   useEffect(() => {
     fetchData();
+    document.title = "Vaccine";
   }, []);
 
   const handleSearch = () => {
@@ -90,73 +87,31 @@ function Vaccine() {
       title: "Vaccine Name",
       dataIndex: "vaccineName",
       key: "vaccineName",
-      sorter: (a, b) => a.vaccineName.localeCompare(b.vaccineName),
     },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-      sorter: (a, b) => a.description.localeCompare(b.description),
-      render: (text) => (text.length > 20 ? `${text.substring(0, 20)}...` : text),
-    },
-
-    {
-      title: "Price",
-      dataIndex: "price",
-      key: "price",
-      sorter: (a, b) => a.price - b.price,
-      render: (price) => formatVND(price),
-    },
-    {
-      title: "Min Age",
-      dataIndex: "minAge",
-      key: "minAge",
-      sorter: (a, b) => a.minAge - b.minAge,
-    },
-    {
-      title: "Max Age",
-      dataIndex: "maxAge",
-      key: "maxAge",
-      sorter: (a, b) => a.maxAge - b.maxAge,
-    },
-    {
-      title: "Number dose",
-      dataIndex: "numberDose",
-      key: "numberDose",
-      sorter: (a, b) => a.maxAge - b.maxAge,
-    },
-    {
-      title: "Duration",
-      dataIndex: "duration",
-      key: "duration",
-      sorter: (a, b) => a.maxAge - b.maxAge,
-    },
-    {
-      title: "Unit",
-      dataIndex: "unit",
-      key: "unit",
-      sorter: (a, b) => a.maxAge - b.maxAge,
-    },
-    {
-      title: "Manufacturer Name",
-      dataIndex: "manufacturerName",
-      key: "manufacturerName",
-      sorter: (a, b) => a.manufacturerName.localeCompare(b.manufacturerName),
-    },
-
     {
       title: "Image",
       dataIndex: "image",
       key: "image",
-      render: (image) => <Image src={image} alt="vaccine" style={{ width: 60, height: 60, borderRadius: "10px" }} />,
+      render: (text) => (
+        <Image src={text} alt="Vaccine" style={{ width: 50, height: 50, objectFit: "cover", borderRadius: "10px" }} />
+      ),
     },
     {
-      title: "Status",
+      title: "Manufacturer",
+      dataIndex: ["manufacturer", "name"],
+      key: "manufacturer",
+    },
+    {
+      title: "Price",
+      dataIndex: "price",
+      key: "price",
+      render: (price) => formatVND(price),
+    },
+    {
+      title: "Active Status",
       dataIndex: "isActive",
       key: "isActive",
-      defaultSortOrder: "descend", // Mặc định sort giảm dần (Active trước)
-      sorter: (a, b) => a.isActive - b.isActive,
-      render: (isActive) => (isActive ? <Tag color="green">Active</Tag> : <Tag color="red">Inactive</Tag>),
+      render: (isActive) => <Tag color={isActive ? "green" : "red"}>{isActive ? "Active" : "Inactive"}</Tag>,
     },
     {
       title: "Action",
@@ -168,12 +123,10 @@ function Vaccine() {
             type="primary"
             style={{ marginRight: 5 }}
             onClick={() => {
-              console.log("Record:", record); // Kiểm tra dữ liệu trước khi set vào form
-
               setIsUpdate(true);
               form.setFieldsValue({
                 ...record,
-                manufacturerId: manufacturers.find((m) => m.name === record.manufacturerName)?.manufacturerId || null,
+                manufacturerId: record.manufacturer?.manufacturerId || null,
               });
 
               setOpen(true);
@@ -223,10 +176,11 @@ function Vaccine() {
   const handleOpenModal = () => {
     form.resetFields();
     setOpen(true);
+    setIsUpdate(false);
   };
 
   const handleSubmitForm = async (values) => {
-    console.log(values);
+    console.log("values", values);
     setLoading(true);
 
     try {
@@ -235,10 +189,16 @@ function Vaccine() {
         values.image = url;
       }
 
-      if (values.vaccineId) {
+      if (values.vaccineId || isUpdate) {
+        console.log("id", values.vaccineId);
         await api.put(`v1/vaccine/${values.vaccineId}`, {
           vaccineName: values.vaccineName,
-          description: values.description,
+          description: {
+            info: values.description?.info || "",
+            targetedPatient: values.description?.targetedPatient || "",
+            injectionSchedule: values.description?.injectionSchedule || "",
+            vaccineReaction: values.description?.vaccineReaction || "",
+          },
           minAge: values.minAge,
           maxAge: values.maxAge,
           numberDose: values.numberDose,
@@ -249,6 +209,7 @@ function Vaccine() {
           price: values.price,
           isActive: true,
         });
+        console.log("submit values", values);
         toast.success("Update vaccine sucessfully");
       } else {
         await api.post("v1/vaccine", {
@@ -264,7 +225,7 @@ function Vaccine() {
           price: values.price,
           isActive: true,
         });
-
+        console.log("submit values", values);
         toast.success("Add vaccine sucessfully");
       }
     } catch (error) {
@@ -303,77 +264,115 @@ function Vaccine() {
       <Table columns={columns} dataSource={filteredData} rowKey="id" scroll={{ x: "max-content", y: 400 }} />
       <Modal
         open={open}
-        title={`${isUpdate ? "Update" : "Add"} vaccine`}
+        title="Vaccine Form"
         onCancel={handleCancel}
-        footer={[
-          <Button key="back" onClick={handleCancel}>
-            Return
-          </Button>,
-          <Button key="submit" type="primary" loading={loading} onClick={() => form.submit()}>
-            Submit
-          </Button>,
-        ]}
+        onOk={() => form.submit()}
+        confirmLoading={loading}
+        width={800}
       >
-        <Form form={form} labelCol={{ span: 24 }} onFinish={handleSubmitForm}>
-          <Form.Item label="vaccineId" name="vaccineId" hidden>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Vaccine Name"
-            name="vaccineName"
-            rules={[{ required: true, message: "Please enter the vaccine name" }]}
-          >
-            <Input />
-          </Form.Item>
+        <Form form={form} onFinish={handleSubmitForm} labelCol={{ span: 24 }}>
+          <Row gutter={16}>
+            <Col span={14}>
+              <Form.Item name="vaccineId" label="vaccineId" hidden>
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name="vaccineName"
+                label="Vaccine Name"
+                rules={[{ required: true, message: "Please enter vaccine name" }]}
+              >
+                <Input placeholder="Enter vaccine name" />
+              </Form.Item>
 
-          <Form.Item
-            label="Description"
-            name="description"
-            rules={[{ required: true, message: "Please enter description" }]}
-          >
-            <Input.TextArea rows={3} />
-          </Form.Item>
+              <Form.Item
+                name={["description", "info"]}
+                label="Information"
+                rules={[{ required: true, message: "Please enter information" }]}
+              >
+                <Input />
+              </Form.Item>
 
-          <Form.Item
-            label="Minimum Age"
-            name="minAge"
-            rules={[{ required: true, type: "number", message: "Please enter minimum age" }]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
+              <Form.Item
+                name={["description", "targetedPatient"]}
+                label="Targeted Patients"
+                rules={[{ required: true, message: "Please enter targeted patients" }]}
+              >
+                <Input />
+              </Form.Item>
 
-          <Form.Item
-            label="Maximum Age"
-            name="maxAge"
-            rules={[{ required: true, type: "number", message: "Please enter maximum age" }]}
-          >
-            <InputNumber min={0} max={8} />
-          </Form.Item>
+              <Form.Item
+                name={["description", "injectionSchedule"]}
+                label="Injection Schedule"
+                rules={[{ required: true, message: "Please enter injection schedule" }]}
+              >
+                <Input />
+              </Form.Item>
 
-          <Form.Item
-            label="Number of Doses"
-            name="numberDose"
-            rules={[{ required: true, type: "number", message: "Please enter number of doses" }]}
-          >
-            <InputNumber min={1} />
-          </Form.Item>
+              <Form.Item
+                name="manufacturerId"
+                label="Manufacturer"
+                rules={[{ required: true, message: "Please select manufacturer" }]}
+              >
+                <Select disabled={isUpdate}>
+                  {manufacturers.map((m) => (
+                    <Select.Option key={m.manufacturerId} value={m.manufacturerId}>
+                      {m.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
 
-          <Form.Item
-            label="Duration"
-            name="duration"
-            rules={[{ required: true, type: "number", message: "Please enter duration" }]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
+              <Form.Item name="price" label="Price" rules={[{ required: true, message: "Enter price" }]}>
+                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter price" />
+              </Form.Item>
+            </Col>
 
-          <Form.Item label="Unit" name="unit" rules={[{ required: true, message: "Please select the unit" }]}>
-            <Select placeholder="Select unit">
-              <Select.Option value="years">Years</Select.Option>
-              <Select.Option value="months">Months</Select.Option>
-              <Select.Option value="days">Days</Select.Option>
-            </Select>
-          </Form.Item>
+            <Col span={10}>
+              <Form.Item
+                name={["description", "vaccineReaction"]}
+                label="Vaccine Reaction"
+                rules={[{ required: true, message: "Please enter vaccine reactions" }]}
+              >
+                <Input />
+              </Form.Item>
 
+              <Form.Item
+                name="minAge"
+                label="Minimum Age"
+                rules={[{ required: true, message: "Please enter minimum age" }]}
+              >
+                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter minimum age" />
+              </Form.Item>
+
+              <Form.Item
+                name="maxAge"
+                label="Maximum Age"
+                rules={[{ required: true, message: "Please enter maximum age" }]}
+              >
+                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter maximum age" />
+              </Form.Item>
+
+              <Form.Item
+                name="numberDose"
+                label="Number of Doses"
+                rules={[{ required: true, message: "Please enter number of doses" }]}
+              >
+                <InputNumber style={{ width: "100%" }} min={1} placeholder="Enter number of doses" />
+              </Form.Item>
+
+              <Form.Item
+                name="duration"
+                label="Duration (days)"
+                rules={[{ required: true, message: "Please enter duration" }]}
+              >
+                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter duration" />
+              </Form.Item>
+
+              <Form.Item name="unit" label="Unit" rules={[{ required: true, message: "Please enter unit" }]}>
+                <Input placeholder="Enter unit" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item label="Image" name="image" rules={[{ required: true, message: "Please upload image" }]}>
             <Upload
               action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
@@ -385,30 +384,9 @@ function Vaccine() {
               {fileList.length >= 8 ? null : uploadButton}
             </Upload>
           </Form.Item>
-
-          <Form.Item
-            label="Manufacturer"
-            name="manufacturerId"
-            rules={[{ required: true, message: "Please select manufacturer" }]}
-          >
-            <Select placeholder="Select manufacturer">
-              {manufacturers.map((manufacturer) => (
-                <Select.Option key={manufacturer.manufacturerId} value={manufacturer.manufacturerId}>
-                  {manufacturer.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="Price"
-            name="price"
-            rules={[{ required: true, type: "number", message: "Please enter the price" }]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
         </Form>
       </Modal>
+
       {previewImage && (
         <Image
           wrapperStyle={{
