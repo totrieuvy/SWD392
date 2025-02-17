@@ -1,15 +1,23 @@
 import { useEffect, useState } from "react";
 import api from "../../../config/axios";
-import { Button, Input, Modal, Table, Tag } from "antd";
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Table, Tag } from "antd";
 import { formatVND } from "../../../utils/currencyFormat";
 import { SearchOutlined } from "@ant-design/icons";
+import "./PackageVaccine.scss";
+import { useForm } from "antd/es/form/Form";
+import { toast } from "react-toastify";
 
 function PackageVaccine() {
+  const [form] = useForm();
   const [packageVaccine, setPackageVaccine] = useState([]);
   const [filteredPackages, setFilteredPackages] = useState([]);
+  const [vaccineList, setVaccineList] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
 
   const columns = [
     {
@@ -51,23 +59,53 @@ function PackageVaccine() {
       title: "Hành động",
       dataIndex: "packageId",
       key: "packageId",
-      render: (_, record) => (
+      render: (packageId, record) => (
         <div style={{ display: "flex", gap: "5px" }}>
           <Button type="default" onClick={() => showDetail(record)}>
             Detail
           </Button>
-          <Button type="primary">Edit</Button>
-          <Button type="primary" danger>
-            Delete
+          <Button
+            type="primary"
+            onClick={() => {
+              const vaccineIds = record.vaccines ? record.vaccines.map((vaccine) => vaccine.vaccineId) : [];
+              form.setFieldsValue({ ...record, vaccineIds });
+              setIsUpdate(true);
+              setOpen(true);
+            }}
+          >
+            Edit
           </Button>
+          <Popconfirm
+            title="Delete package vaccine"
+            description="Are you sure to delete this package vaccine?"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={() => handleDelete(packageId)}
+          >
+            <Button type="primary" danger>
+              Delete
+            </Button>
+          </Popconfirm>
         </div>
       ),
     },
   ];
 
+  const handleDelete = async (packageId) => {
+    try {
+      const response = await api.delete(`/v1/package/${packageId}`);
+      fetchData();
+      toast.success(response.data.message);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const fetchData = async () => {
     try {
       const response = await api.get("/v1/package");
+      const responseVaccine = await api.get("/v1/vaccine");
+      setVaccineList(responseVaccine.data.data.filter((vaccine) => vaccine.isActive));
       const sortedData = response.data.data.sort((a, b) => Number(b.isActive) - Number(a.isActive));
       setPackageVaccine(sortedData);
       setFilteredPackages(sortedData);
@@ -91,8 +129,67 @@ function PackageVaccine() {
     document.title = "Package Vaccine";
   }, []);
 
+  const handleCancel = () => {
+    setOpen(false);
+  };
+
+  const handleOpenModal = () => {
+    form.resetFields();
+    setOpen(true);
+  };
+
+  const handleVaccineChange = (selectedIds) => {
+    const total = vaccineList
+      .filter((vaccine) => selectedIds.includes(vaccine.vaccineId))
+      .reduce((sum, vaccine) => sum + vaccine.price, 0);
+    form.setFieldsValue({ price: total });
+  };
+
+  const handleSubmitForm = async (values) => {
+    setLoading(true);
+
+    try {
+      if (isUpdate && values.packageId) {
+        const response = await api.put(`/v1/package/${values.packageId}`, {
+          packageName: values.packageName,
+          description: values.description,
+          vaccineIds: values.vaccineIds,
+          price: values.price,
+          discount: values.discount,
+          minAge: values.minAge,
+          maxAge: values.maxAge,
+          unit: values.unit,
+          isActive: true,
+        });
+        fetchData();
+        toast.success(response.data.message);
+      } else {
+        const response = await api.post("/v1/package", {
+          packageName: values.packageName,
+          description: values.description,
+          vaccineIds: values.vaccineIds,
+          price: values.price,
+          discount: values.discount,
+          minAge: values.minAge,
+          maxAge: values.maxAge,
+          unit: values.unit,
+          isActive: true,
+        });
+        fetchData();
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+      setOpen(false);
+      form.resetFields();
+    }
+  };
+
   return (
     <div className="PackageVaccine">
+      <h1>List of packages</h1>
       <div className="Vaccine__above">
         <div style={{ marginBottom: 16, display: "flex", gap: "10px" }}>
           <Input
@@ -107,11 +204,89 @@ function PackageVaccine() {
         </div>
 
         <div>
-          <Button type="primary">Add new vaccine</Button>
+          <Button type="primary" onClick={handleOpenModal}>
+            Add new vaccine
+          </Button>
         </div>
       </div>
 
       <Table dataSource={filteredPackages} columns={columns} rowKey="packageId" />
+
+      <Modal
+        open={open}
+        title="Vaccine Form"
+        onCancel={handleCancel}
+        onOk={() => form.submit()}
+        confirmLoading={loading}
+      >
+        <Form form={form} layout="vertical" initialValues={{ isActive: true }} onFinish={handleSubmitForm}>
+          <Form.Item name="packageId" label="packageId" hidden>
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="packageName"
+            label="Package Name"
+            rules={[{ required: true, message: "Please enter the package name" }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true, message: "Please enter the description" }]}
+          >
+            <Input.TextArea rows={4} />
+          </Form.Item>
+
+          <Form.Item
+            name="vaccineIds"
+            label="Select Vaccines"
+            rules={[{ required: true, message: "Please select at least one vaccine" }]}
+          >
+            <Select mode="multiple" onChange={handleVaccineChange}>
+              {vaccineList.map((vaccine) => (
+                <Select.Option key={vaccine.vaccineId} value={vaccine.vaccineId}>
+                  {vaccine.vaccineName} - {vaccine.price.toLocaleString()} VND
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="price" label="Total Price" hidden>
+            <InputNumber style={{ width: "100%" }} disabled />
+          </Form.Item>
+
+          <Form.Item
+            name="discount"
+            label="Discount"
+            rules={[{ required: true, message: "Please enter the discount" }]}
+          >
+            <InputNumber min={0} style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
+            name="minAge"
+            label="Minimum Age"
+            rules={[{ required: true, message: "Please enter the minimum age" }]}
+          >
+            <InputNumber min={0} style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
+            name="maxAge"
+            label="Maximum Age"
+            rules={[{ required: true, message: "Please enter the maximum age" }]}
+          >
+            <InputNumber min={0} style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item name="unit" label="Unit" rules={[{ required: true, message: "Please enter the unit" }]}>
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         title="Chi tiết gói vaccine"
