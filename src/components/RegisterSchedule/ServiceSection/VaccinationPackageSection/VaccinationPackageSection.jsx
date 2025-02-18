@@ -106,11 +106,35 @@ const VaccinationPackageSection = () => {
     <>
       <Form.Item label="Vaccination Package" className="mt-4">
         <Collapse>
-          <Panel header="Vaccination / 0-9 months" key="1">
+          <Panel header="Vaccination / 1 year" key="1">
             {renderPackages(vaccinePackages9Months)}
           </Panel>
           
-          <Panel header="Vaccination / 0-12 months" key="2">
+          <Panel header="Vaccination / 2 years" key="2">
+            {renderPackages(vaccinePackages12Months)}
+          </Panel>
+
+          <Panel header="Vaccination / 3 years" key="3">
+            {renderPackages(vaccinePackages12Months)}
+          </Panel>
+
+          <Panel header="Vaccination / 4 years" key="4">
+            {renderPackages(vaccinePackages12Months)}
+          </Panel>
+
+          <Panel header="Vaccination / 5 years" key="5">
+            {renderPackages(vaccinePackages12Months)}
+          </Panel>
+
+          <Panel header="Vaccination / 6 years" key="6">
+            {renderPackages(vaccinePackages12Months)}
+          </Panel>
+
+          <Panel header="Vaccination / 7 years" key="7">
+            {renderPackages(vaccinePackages12Months)}
+          </Panel>
+
+          <Panel header="Vaccination / 8 years" key="8">
             {renderPackages(vaccinePackages12Months)}
           </Panel>
         </Collapse>
