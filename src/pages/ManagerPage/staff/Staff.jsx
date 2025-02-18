@@ -151,32 +151,41 @@ function Staff() {
 
   const handleOpenModal = () => {
     form.resetFields();
+    setIsUpdate(false);
     setOpen(true);
   };
 
   const handleOk = async (values) => {
+    console.log("values", values);
     setLoading(true);
     try {
-      if (values.staffId) {
-        await api.put(`v1/staff/${values.staffId}`, values);
+      const formattedValues = {
+        username: values.username,
+        password: values.password,
+        email: values.email,
+        fullName: values.fullName,
+        phone: values.phone,
+        address: values.address,
+        dob: values.dob ? values.dob.format("DD-MM-YYYY") : null,
+        gender: values.gender,
+        bloodType: values.bloodType,
+        status: "Active",
+      };
+
+      if (isUpdate && values.staffId) {
+        // Đảm bảo values.staffId có giá trị hợp lệ
+        console.log(`PUT request to: v1/staff/${values.staffId}`);
+        await api.put(`v1/staff/${values.staffId}`, formattedValues);
         toast.success("Update staff successful");
       } else {
-        const values = await form.validateFields();
-
-        // Chuyển đổi định dạng ngày sinh
-        const formattedValues = {
-          ...values,
-          dob: values.dob.format("DD-MM-YYYY"),
-        };
-
-        setLoading(true);
         await api.post("v1/staff", formattedValues);
-        toast.success("add staff successful");
-        setLoading(false);
-        setOpen(false);
-        form.resetFields();
-        fetchData();
+        toast.success("Add staff successful");
       }
+
+      setLoading(false);
+      setOpen(false);
+      form.resetFields();
+      fetchData();
     } catch (error) {
       setLoading(false);
       console.error("Error:", error);
@@ -215,7 +224,7 @@ function Staff() {
           <Button key="back" onClick={handleCancel}>
             Return
           </Button>,
-          <Button key="submit" type="primary" loading={loading} onClick={handleOk}>
+          <Button key="submit" type="primary" loading={loading} onClick={() => form.submit()}>
             Submit
           </Button>,
         ]}
@@ -236,9 +245,23 @@ function Staff() {
             name="password"
             rules={[{ required: true, message: "Please input your password!" }]}
           >
-            <Input.Password placeholder="Enter name" />
+            <Input.Password placeholder="Enter password" disabled={isUpdate} />
           </Form.Item>
-          <Form.Item label="Email" name="email" rules={[{ required: true, message: "Please input your email!" }]}>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              {
+                type: "email",
+                required: true,
+                message: "Please enter a valid email address!",
+              },
+              {
+                required: true,
+                message: "Email cannot be blank!",
+              },
+            ]}
+          >
             <Input placeholder="Enter email" />
           </Form.Item>
           <Form.Item label="Full Name" name="fullName" rules={[{ required: true, message: "Please input your name!" }]}>
