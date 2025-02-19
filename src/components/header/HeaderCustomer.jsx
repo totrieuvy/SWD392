@@ -63,7 +63,7 @@ const Header = () => {
     {
       key: "vaccination",
       icon: <MedicineBoxOutlined />,
-      label: <Link to="/vaccination">Vaccination</Link>,
+      label: <Link to="/vaccination">Vaccine</Link>,
     },
     {
       key: "pricing",
