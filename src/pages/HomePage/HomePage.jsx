@@ -1,4 +1,3 @@
-import React from "react";
 import VaccineSection from "../../components/homepage/VaccineSection/VaccineSection";
 
 const HomePage = () => {
@@ -17,7 +16,6 @@ const HomePage = () => {
         />
       </section>
 
-
       {/* Second Section */}
       <section
         style={{
@@ -30,15 +28,11 @@ const HomePage = () => {
       >
         {/* Left Side: Title and Description */}
         <div style={{ maxWidth: "50%", flex: "1 1 300px" }}>
-          <h2 style={{ fontSize: "32px", fontWeight: "bold" }}>
-            Vaccines: A Shield for Your Child's Future
-          </h2>
+          <h2 style={{ fontSize: "32px", fontWeight: "bold" }}>Vaccines: A Shield for Your Child Future</h2>
           <p style={{ fontSize: "18px", lineHeight: "1.6", marginTop: "20px" }}>
-            At Vaccine Care, we believe every child deserves a healthy start in
-            life. Explore our resources to learn about recommended vaccines,
-            their benefits, and how they work to protect your child from serious
-            illnesses. Together, we can build a healthier tomorrow for all
-            children.
+            At Vaccine Care, we believe every child deserves a healthy start in life. Explore our resources to learn
+            about recommended vaccines, their benefits, and how they work to protect your child from serious illnesses.
+            Together, we can build a healthier tomorrow for all children.
           </p>
         </div>
 
@@ -51,9 +45,9 @@ const HomePage = () => {
           />
         </div>
       </section>
-      
+
       {/* Third Section */}
-      <VaccineSection/>
+      <VaccineSection />
     </div>
   );
 };

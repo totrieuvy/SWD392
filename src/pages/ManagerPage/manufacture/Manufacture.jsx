@@ -1,7 +1,6 @@
 import { Button, Form, Input, Modal, Popconfirm, Table, Tag } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../../config/axios";
-import dayjs from "dayjs";
 import { SearchOutlined } from "@ant-design/icons";
 
 import "./Manufacture.scss";
@@ -16,10 +15,6 @@ function Manufacture() {
   const [form] = useForm();
   const [loading, setLoading] = useState(false);
   const [isUpdate, setIsUpdate] = useState(false);
-
-  useEffect(() => {
-    document.title = "Manufacture";
-  }, []);
 
   const fetchData = async () => {
     try {
@@ -38,33 +33,34 @@ function Manufacture() {
   };
 
   useEffect(() => {
+    document.title = "Manufacture";
     fetchData();
   }, []);
 
   const columns = [
     {
-      title: "Name",
+      title: "Tên nhà cung cấp",
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "ShortName",
+      title: "Tên viết tắt",
       dataIndex: "shortName",
       key: "shortName",
     },
     {
-      title: "Description",
+      title: "Mô tả",
       dataIndex: "description",
       key: "description",
       ellipsis: true,
     },
     {
-      title: "Country Name",
+      title: "Tên quốc gia",
       dataIndex: "countryName",
       key: "countryName",
     },
     {
-      title: "Status",
+      title: "Tình trạng",
       dataIndex: "isActive",
       key: "isActive",
       defaultSortOrder: "ascend",
@@ -72,13 +68,7 @@ function Manufacture() {
       render: (isActive) => <Tag color={isActive ? "green" : "red"}>{isActive ? "Active" : "InActive"}</Tag>,
     },
     {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => dayjs(date).format("YYYY-MM-DD HH:mm"),
-    },
-    {
-      title: "Action",
+      title: "Hành động",
       dataIndex: "manufacturerId",
       key: "manufacturerId",
       render: (manufacturerId, record) => {
@@ -109,9 +99,9 @@ function Manufacture() {
     },
   ];
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (manufacturerId) => {
     try {
-      await api.delete(`v1/manufacturer/${id}`);
+      await api.delete(`v1/manufacturer/${manufacturerId}`);
       toast.success("Manufacture deleted successfully!");
       fetchData();
     } catch (error) {
@@ -130,6 +120,7 @@ function Manufacture() {
 
   const handleOpenModal = () => {
     form.resetFields();
+    setIsUpdate(false);
     setOpen(true);
   };
 

@@ -21,6 +21,8 @@ function Vaccine() {
   const [previewImage, setPreviewImage] = useState("");
   const [fileList, setFileList] = useState([]);
   const [isUpdate, setIsUpdate] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedVaccine, setSelectedVaccine] = useState(null);
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -60,7 +62,6 @@ function Vaccine() {
   const fetchData = async () => {
     try {
       const response = await api.get("v1/vaccine");
-      console.log(response.data.data);
       const listmanufacturers = await api.get("v1/manufacturer");
       setManufacturers(listmanufacturers.data.data);
       const sortedData = response.data.data.sort((a, b) => b.isActive - a.isActive);
@@ -118,7 +119,10 @@ function Vaccine() {
       dataIndex: "vaccineId",
       key: "vaccineId",
       render: (vaccineId, record) => (
-        <div>
+        <div style={{ display: "flex", gap: "5px" }}>
+          <Button color="cyan" variant="solid" onClick={() => handleDetail(record)}>
+            Detail
+          </Button>
           <Button
             type="primary"
             style={{ marginRight: 5 }}
@@ -180,25 +184,21 @@ function Vaccine() {
   };
 
   const handleSubmitForm = async (values) => {
-    console.log("values", values);
     setLoading(true);
 
     try {
       if (values.image) {
-        const url = await uploadFile(values.image.file.originFileObj);
-        values.image = url;
+        if (values.image.file && values.image.file.originFileObj) {
+          const url = await uploadFile(values.image.file.originFileObj);
+          values.image = url;
+        }
       }
 
       if (values.vaccineId || isUpdate) {
         console.log("id", values.vaccineId);
         await api.put(`v1/vaccine/${values.vaccineId}`, {
           vaccineName: values.vaccineName,
-          description: {
-            info: values.description?.info || "",
-            targetedPatient: values.description?.targetedPatient || "",
-            injectionSchedule: values.description?.injectionSchedule || "",
-            vaccineReaction: values.description?.vaccineReaction || "",
-          },
+          description: values.description,
           minAge: values.minAge,
           maxAge: values.maxAge,
           numberDose: values.numberDose,
@@ -209,7 +209,6 @@ function Vaccine() {
           price: values.price,
           isActive: true,
         });
-        console.log("submit values", values);
         toast.success("Update vaccine sucessfully");
       } else {
         await api.post("v1/vaccine", {
@@ -225,7 +224,6 @@ function Vaccine() {
           price: values.price,
           isActive: true,
         });
-        console.log("submit values", values);
         toast.success("Add vaccine sucessfully");
       }
     } catch (error) {
@@ -238,33 +236,43 @@ function Vaccine() {
     }
   };
 
+  const handleDetail = (record) => {
+    setSelectedVaccine(record);
+    setDetailOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailOpen(false);
+    setSelectedVaccine(null);
+  };
+
   return (
     <div className="Vaccine">
-      <h1>List of vaccines</h1>
+      <h1>Danh sách vaccines</h1>
 
       <div className="Vaccine__above">
         <div style={{ marginBottom: 16, display: "flex", gap: "10px" }}>
           <Input
-            placeholder="Search by Vaccine Name"
+            placeholder="Nhập tên vaccine"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 250 }}
           />
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-            Search
+            Tìm kiếm
           </Button>
         </div>
 
         <div>
           <Button type="primary" onClick={handleOpenModal}>
-            Add new vaccine
+            Thêm mới vaccine
           </Button>
         </div>
       </div>
       <Table columns={columns} dataSource={filteredData} rowKey="id" scroll={{ x: "max-content", y: 400 }} />
       <Modal
         open={open}
-        title="Vaccine Form"
+        title="Vaccine"
         onCancel={handleCancel}
         onOk={() => form.submit()}
         confirmLoading={loading}
@@ -339,15 +347,23 @@ function Vaccine() {
               <Form.Item
                 name="minAge"
                 label="Minimum Age"
-                rules={[{ required: true, message: "Please enter minimum age" }]}
+                rules={[
+                  { required: true, message: "Please enter minimum age" },
+                  { type: "number", min: 0, message: "Minimum age must be greater or equal 0" },
+                  { type: "number", max: 8, message: "Minimum age must be less than 9" },
+                ]}
               >
-                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter minimum age" />
+                <InputNumber style={{ width: "100%" }} placeholder="Enter minimum age" />
               </Form.Item>
 
               <Form.Item
                 name="maxAge"
                 label="Maximum Age"
-                rules={[{ required: true, message: "Please enter maximum age" }]}
+                rules={[
+                  { required: true, message: "Please enter maximum age" },
+                  { type: "number", min: 1, message: "Maximum age must be greater than 0" },
+                  { type: "number", max: 8, message: "Maximum age must be less than 9" },
+                ]}
               >
                 <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter maximum age" />
               </Form.Item>
@@ -368,8 +384,13 @@ function Vaccine() {
                 <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter duration" />
               </Form.Item>
 
-              <Form.Item name="unit" label="Unit" rules={[{ required: true, message: "Please enter unit" }]}>
-                <Input placeholder="Enter unit" />
+              <Form.Item
+                name="unit"
+                label="Unit"
+                rules={[{ required: true, message: "Please enter unit" }]}
+                initialValue="year"
+              >
+                <Input placeholder="Enter unit" disabled />
               </Form.Item>
             </Col>
           </Row>
@@ -385,6 +406,54 @@ function Vaccine() {
             </Upload>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Modal Detail */}
+      <Modal open={detailOpen} title="Vaccine Details" onCancel={handleCloseDetail} footer={null}>
+        {selectedVaccine && (
+          <div>
+            <p>
+              <strong>Name:</strong> {selectedVaccine.vaccineName}
+            </p>
+            <p>
+              <strong>Manufacturer:</strong> {selectedVaccine.manufacturer?.name}
+            </p>
+            <p>
+              <strong>Price:</strong> {formatVND(selectedVaccine.price)}
+            </p>
+            <p>
+              <strong>Active:</strong> {selectedVaccine.isActive ? "Yes" : "No"}
+            </p>
+            <p>
+              <strong>Info:</strong> {selectedVaccine.description?.info}
+            </p>
+            <p>
+              <strong>Targeted Patients:</strong> {selectedVaccine.description?.targetedPatient}
+            </p>
+            <p>
+              <strong>Injection Schedule:</strong> {selectedVaccine.description?.injectionSchedule}
+            </p>
+            <p>
+              <strong>Vaccine Reaction:</strong> {selectedVaccine.description?.vaccineReaction}
+            </p>
+            <p>
+              <strong>Min Age:</strong> {selectedVaccine.minAge}
+            </p>
+            <p>
+              <strong>Max Age:</strong> {selectedVaccine.maxAge}
+            </p>
+            <p>
+              <strong>Number of Doses:</strong> {selectedVaccine.numberDose}
+            </p>
+            <p>
+              <strong>Duration:</strong> {selectedVaccine.duration} days
+            </p>
+            <p>
+              <strong>Unit:</strong> {selectedVaccine.unit}
+            </p>
+            <Image src={selectedVaccine.image} alt="Vaccine" style={{ width: "100px" }} />
+          </div>
+        )}
       </Modal>
 
       {previewImage && (

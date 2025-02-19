@@ -138,23 +138,25 @@ function PackageVaccine() {
     setOpen(true);
   };
 
-  const handleVaccineChange = (selectedIds) => {
-    const total = vaccineList
-      .filter((vaccine) => selectedIds.includes(vaccine.vaccineId))
-      .reduce((sum, vaccine) => sum + vaccine.price, 0);
-    form.setFieldsValue({ price: total });
-  };
-
   const handleSubmitForm = async (values) => {
     setLoading(true);
 
     try {
       if (isUpdate && values.packageId) {
+        console.log("Updating package with data:", {
+          packageName: values.packageName,
+          description: values.description,
+          vaccineIds: values.vaccineIds,
+          discount: values.discount,
+          minAge: values.minAge,
+          maxAge: values.maxAge,
+          unit: values.unit,
+          isActive: true,
+        });
         const response = await api.put(`/v1/package/${values.packageId}`, {
           packageName: values.packageName,
           description: values.description,
           vaccineIds: values.vaccineIds,
-          price: values.price,
           discount: values.discount,
           minAge: values.minAge,
           maxAge: values.maxAge,
@@ -168,7 +170,6 @@ function PackageVaccine() {
           packageName: values.packageName,
           description: values.description,
           vaccineIds: values.vaccineIds,
-          price: values.price,
           discount: values.discount,
           minAge: values.minAge,
           maxAge: values.maxAge,
@@ -189,36 +190,30 @@ function PackageVaccine() {
 
   return (
     <div className="PackageVaccine">
-      <h1>List of packages</h1>
+      <h1>Danh sách combo</h1>
       <div className="Vaccine__above">
         <div style={{ marginBottom: 16, display: "flex", gap: "10px" }}>
           <Input
-            placeholder="Search by Package Name"
+            placeholder="Nhập tên gói"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 250 }}
           />
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-            Search
+            Tìm kiếm
           </Button>
         </div>
 
         <div>
           <Button type="primary" onClick={handleOpenModal}>
-            Add new vaccine
+            Thêm mới combo
           </Button>
         </div>
       </div>
 
       <Table dataSource={filteredPackages} columns={columns} rowKey="packageId" />
 
-      <Modal
-        open={open}
-        title="Vaccine Form"
-        onCancel={handleCancel}
-        onOk={() => form.submit()}
-        confirmLoading={loading}
-      >
+      <Modal open={open} title="Combo" onCancel={handleCancel} onOk={() => form.submit()} confirmLoading={loading}>
         <Form form={form} layout="vertical" initialValues={{ isActive: true }} onFinish={handleSubmitForm}>
           <Form.Item name="packageId" label="packageId" hidden>
             <Input />
@@ -245,17 +240,13 @@ function PackageVaccine() {
             label="Select Vaccines"
             rules={[{ required: true, message: "Please select at least one vaccine" }]}
           >
-            <Select mode="multiple" onChange={handleVaccineChange}>
+            <Select mode="multiple">
               {vaccineList.map((vaccine) => (
                 <Select.Option key={vaccine.vaccineId} value={vaccine.vaccineId}>
                   {vaccine.vaccineName} - {vaccine.price.toLocaleString()} VND
                 </Select.Option>
               ))}
             </Select>
-          </Form.Item>
-
-          <Form.Item name="price" label="Total Price" hidden>
-            <InputNumber style={{ width: "100%" }} disabled />
           </Form.Item>
 
           <Form.Item
@@ -269,7 +260,11 @@ function PackageVaccine() {
           <Form.Item
             name="minAge"
             label="Minimum Age"
-            rules={[{ required: true, message: "Please enter the minimum age" }]}
+            rules={[
+              { required: true, message: "Please enter the minimum age" },
+              { type: "number", min: 0, message: "Minimum age must be greater or equal 0" },
+              { type: "number", max: 8, message: "Minimum age must be less than 9" },
+            ]}
           >
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
@@ -277,13 +272,22 @@ function PackageVaccine() {
           <Form.Item
             name="maxAge"
             label="Maximum Age"
-            rules={[{ required: true, message: "Please enter the maximum age" }]}
+            rules={[
+              { required: true, message: "Please enter the maximum age" },
+              { type: "number", min: 0, message: "Minimum age must be greater or equal 0" },
+              { type: "number", max: 8, message: "Minimum age must be less than 9" },
+            ]}
           >
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item name="unit" label="Unit" rules={[{ required: true, message: "Please enter the unit" }]}>
-            <Input />
+          <Form.Item
+            name="unit"
+            label="Unit"
+            rules={[{ required: true, message: "Please enter unit" }]}
+            initialValue="year"
+          >
+            <Input placeholder="Enter unit" disabled />
           </Form.Item>
         </Form>
       </Modal>

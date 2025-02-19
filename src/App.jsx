@@ -19,6 +19,7 @@ import VaccineInfo from "./pages/VaccineInfo/VaccineInfo";
 import HomePage from "./pages/HomePage/HomePage";
 import TotalVaccine from "./pages/AdminPage/totalVaccine/TotalVaccine";
 import PackageVaccine from "./pages/ManagerPage/packageVaccine/PackageVaccine";
+import Detail from "./pages/detail/Detail";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -51,6 +52,10 @@ const App = () => {
         {
           index: true,
           element: <HomePage />,
+        },
+        {
+          path: "detail/:vaccineId",
+          element: <Detail />,
         },
         {
           path: "about-us",
