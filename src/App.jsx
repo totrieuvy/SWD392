@@ -1,6 +1,6 @@
 import { Navigate, Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 import CustomerApp from "./layout/Customer/Customer";
-import AboutUs from "./pages/aboutUs/AboutUs";
+import AboutUs from "./pages/CustomerPage/aboutUs/AboutUs";
 import NotFoundPage from "./pages/error/NotFoundPage";
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
@@ -13,12 +13,13 @@ import Manager from "./pages/AdminPage/manager/Manager";
 import Staff from "./pages/ManagerPage/staff/Staff";
 import Manufacture from "./pages/ManagerPage/manufacture/Manufacture";
 import TotalRevenue from "./pages/AdminPage/revenue/TotalRevenue";
-import RegisterSchedule from "./pages/RegisterSchedule/RegisterSchedule";
+import RegisterSchedule from "./pages/CustomerPage/RegisterSchedule/RegisterSchedule";
 
-import VaccineInfo from "./pages/VaccineInfo/VaccineInfo";
-import HomePage from "./pages/HomePage/HomePage";
+import HomePage from "./pages/CustomerPage/HomePage/HomePage";
 import TotalVaccine from "./pages/AdminPage/totalVaccine/TotalVaccine";
 import PackageVaccine from "./pages/ManagerPage/packageVaccine/PackageVaccine";
+import VaccineDisplay from "./pages/CustomerPage/VaccineInfo/VaccineDisplay";
+import VaccineDetail from "./pages/CustomerPage/VaccineInfo/VaccineDetail";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -61,8 +62,12 @@ const App = () => {
           element: <RegisterSchedule />,
         },
         {
-          path: "vaccine-info",
-          element: <VaccineInfo />,
+          path: "vaccination",
+          element: <VaccineDisplay />,
+        },
+        {
+         path: "/vaccination/:vaccineId",
+          element: <VaccineDetail />,
         },
       ],
     },

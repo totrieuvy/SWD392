@@ -1,5 +1,5 @@
 import React from "react";
-import VaccineSection from "../../components/homepage/VaccineSection/VaccineSection";
+import VaccineSection from "../../../components/homepage/VaccineSection/VaccineSection";
 
 const HomePage = () => {
   return (
