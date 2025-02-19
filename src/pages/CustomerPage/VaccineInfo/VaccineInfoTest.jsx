@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Row, Col, Card, Segmented, ConfigProvider } from 'antd';
+import FilterCarousel from '../../../components/FilterCarousel.jsx/FilterCarousel';
 
-const VaccineInfo = () => {
+const VaccineInfoTest = () => {
   const [selectedSection, setSelectedSection] = useState('Info');
 
   const InfoContent = () => (
@@ -84,6 +85,7 @@ const VaccineInfo = () => {
   };
 
   return (
+    <>
     <ConfigProvider
       theme={{
         components: {
@@ -131,7 +133,9 @@ const VaccineInfo = () => {
         </Col>
       </Row>
     </ConfigProvider>
+    </>
+
   );
 };
 
-export default VaccineInfo;
+export default VaccineInfoTest;
