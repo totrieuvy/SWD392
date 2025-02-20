@@ -56,6 +56,8 @@ function Staff() {
       if (type === "edit") {
         form.setFieldsValue({
           ...staff,
+          // Convert userName to username for consistency
+          username: staff.userName,
           dob: staff.dob ? dayjs(staff.dob, "DD-MM-YYYY") : null,
         });
       }
@@ -76,7 +78,7 @@ function Staff() {
     setModalConfig((prev) => ({ ...prev, loading: true }));
     try {
       const formData = {
-        userName: values.userName,
+        username: values.username,
         email: values.email,
         fullName: values.fullName,
         phone: values.phone,
@@ -228,8 +230,8 @@ function Staff() {
         <Form.Item label="staffId" name="staffId" hidden>
           <Input />
         </Form.Item>
-        <Form.Item label="Username" name="userName" rules={[{ required: true, message: "Please input userName!" }]}>
-          <Input placeholder="Enter userName" />
+        <Form.Item label="Username" name="username" rules={[{ required: true, message: "Please input username!" }]}>
+          <Input placeholder="Enter username" />
         </Form.Item>
         {modalConfig.type === "add" && (
           <Form.Item label="Password" name="password" rules={[{ required: true, message: "Please input password!" }]}>

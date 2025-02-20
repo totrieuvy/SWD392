@@ -22,6 +22,7 @@ import Detail from "./pages/detail/Detail";
 import VaccineDisplay from "./pages/CustomerPage/VaccineInfo/VaccineDisplay";
 import VaccineDetail from "./pages/CustomerPage/VaccineInfo/VaccineDetail";
 import Batch from "./pages/ManagerPage/batch/Batch";
+import RegisterChildren from "./pages/CustomerPage/registerChildren/register/RegisterChildren";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -66,6 +67,10 @@ const App = () => {
         {
           path: "register-schedule",
           element: <RegisterSchedule />,
+        },
+        {
+          path: "register-children",
+          element: <RegisterChildren />,
         },
         {
           path: "vaccination",

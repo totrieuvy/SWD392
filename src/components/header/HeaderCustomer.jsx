@@ -40,11 +40,14 @@ const Header = () => {
   const userMenu = (
     <Menu>
       <Menu.Item key="records" icon={<UserOutlined />}>
-        <Link to="/medical-records">Your Medical Records</Link>
+        <Link to="/medical-records">Hồ sơ trẻ em</Link>
+      </Menu.Item>
+      <Menu.Item key="records" icon={<UserOutlined />}>
+        <Link to="/medical-records">Lịch đăng kí tiêm</Link>
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Logout
+        Đăng xuất
       </Menu.Item>
     </Menu>
   );
@@ -117,7 +120,7 @@ const Header = () => {
                 </Dropdown>
               ) : (
                 <Link to="/login">
-                  <Button type="primary">Sign In</Button>
+                  <Button type="primary">Đăng nhập</Button>
                 </Link>
               ))}
           </div>
@@ -136,7 +139,7 @@ const Header = () => {
               ) : (
                 <Link to="/login">
                   <Button type="primary" className="HomePage-Header-signin-button">
-                    Sign In
+                    Đăng nhập
                   </Button>
                 </Link>
               )}

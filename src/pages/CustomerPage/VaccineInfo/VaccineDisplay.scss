@@ -1,0 +1,32 @@
+.vaccine-table {
+  .ant-table {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .ant-table-thead > tr > th {
+    background-color: #1890ff;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .ant-table-tbody > tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  .ant-table-tbody > tr:hover {
+    background-color: #e6f7ff;
+  }
+
+  .ant-table-tbody > tr > td {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .ant-image {
+    border-radius: 5px;
+    overflow: hidden;
+  }
+}

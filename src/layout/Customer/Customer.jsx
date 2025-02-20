@@ -1,8 +1,7 @@
-import { Outlet } from 'react-router-dom';
-import React from 'react';
-import './AutoAlign-Header-Footer.css';
-import FooterCustomer from '../../components/footer/FooterCustomer';
-import HeaderCustomer from '../../components/header/HeaderCustomer';
+import { Outlet } from "react-router-dom";
+import "./AutoAlign-Header-Footer.css";
+import FooterCustomer from "../../components/footer/FooterCustomer";
+import HeaderCustomer from "../../components/header/HeaderCustomer";
 
 function CustomerApp() {
   return (
@@ -10,7 +9,6 @@ function CustomerApp() {
       <HeaderCustomer />
       <main className="autoAllign-Header-Footer">
         <Outlet />
-        
       </main>
       <FooterCustomer />
     </div>
