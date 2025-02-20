@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ConfigProvider, Button, Menu, Drawer, Dropdown } from "antd";
 import {
   CalendarOutlined,
@@ -6,7 +6,7 @@ import {
   HomeOutlined,
   InfoCircleOutlined,
   MedicineBoxOutlined,
-  DollarOutlined,
+  SolutionOutlined,
   UserOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
@@ -53,12 +53,12 @@ const Header = () => {
     {
       key: "home",
       icon: <HomeOutlined />,
-      label: <Link to="/">Home</Link>,
+      label: <Link to="/">Trang chủ</Link>,
     },
     {
       key: "about",
       icon: <InfoCircleOutlined />,
-      label: <Link to="/about-us">About Us</Link>,
+      label: <Link to="/about-us">Về chúng tôi</Link>,
     },
     {
       key: "vaccination",
@@ -66,14 +66,14 @@ const Header = () => {
       label: <Link to="/vaccination">Vaccine</Link>,
     },
     {
-      key: "pricing",
-      icon: <DollarOutlined />,
-      label: <Link to="/pricing">Pricing</Link>,
-    },
-    {
       key: "register",
       icon: <CalendarOutlined />,
-      label: <Link to="/register-schedule">Register Schedule</Link>,
+      label: <Link to="/register-schedule">Đăng kí tiêm</Link>,
+    },
+    {
+      key: "children",
+      icon: <SolutionOutlined />,
+      label: <Link to="/register-children">Đăng kí hồ sơ trẻ</Link>,
     },
   ];
 

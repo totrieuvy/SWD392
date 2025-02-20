@@ -81,6 +81,7 @@ const Sidebar = () => {
         getItem("Vaccine", "vaccine", <MedicineBoxOutlined />),
         getItem("Package Vaccine", "package-vaccine", <MedicineBoxOutlined />),
         getItem("Manufacture", "manufacture", <ToolOutlined />),
+        getItem("Batch", "batch", <ToolOutlined />),
         getItem("Human resources", "personnel", <TeamOutlined />, [
           getItem("Staff", "staff"),
           getItem("Customer", "/admin/staff"),
