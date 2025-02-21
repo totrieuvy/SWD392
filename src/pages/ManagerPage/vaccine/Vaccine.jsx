@@ -8,6 +8,25 @@ import { useForm } from "antd/es/form/Form";
 import { PlusOutlined } from "@ant-design/icons";
 import uploadFile from "../../../utils/upload";
 import { toast } from "react-toastify";
+import "jspdf-autotable";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+
+if (pdfFonts && pdfFonts.pdfMake) {
+  pdfMake.vfs = pdfFonts.pdfMake.vfs;
+} else {
+  console.error("Không thể tải vfs_fonts. Kiểm tra lại import.");
+}
+
+// Tùy chọn: Thêm font tiếng Việt
+pdfMake.fonts = {
+  Roboto: {
+    normal: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf",
+    bold: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf",
+    italics: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf",
+    bolditalics: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf",
+  },
+};
 
 function Vaccine() {
   const [dataSource, setDataSource] = useState([]);
@@ -181,6 +200,7 @@ function Vaccine() {
     form.resetFields();
     setOpen(true);
     setIsUpdate(false);
+    setFileList([]);
   };
 
   const handleSubmitForm = async (values) => {
@@ -246,6 +266,62 @@ function Vaccine() {
     setSelectedVaccine(null);
   };
 
+  const exportPDF = () => {
+    const docDefinition = {
+      content: [
+        { text: "Danh sách vaccine", style: "header" },
+        { text: `Ngày xuất: ${new Date().toLocaleDateString()}`, style: "subheader" },
+        {
+          table: {
+            headerRows: 1,
+            widths: ["*", "*", "*", "auto", "auto", "auto", "*"],
+            body: [
+              ["Tên Vaccine", "Nhà sản xuất", "Giá", "Tuổi tối thiểu", "Tuổi tối đa", "Số liều", "Trạng thái"],
+              ...filteredData.map((item) => [
+                item.vaccineName,
+                item.manufacturer?.name || "",
+                formatVND(item.price),
+                item.minAge.toString(),
+                item.maxAge.toString(),
+                item.numberDose.toString(),
+                item.isActive ? "Đang hoạt động" : "Không hoạt động",
+              ]),
+            ],
+          },
+        },
+        { text: `Tổng số vaccine: ${filteredData.length}`, style: "summary" },
+        { text: `Vaccine đang hoạt động: ${filteredData.filter((item) => item.isActive).length}`, style: "summary" },
+        { text: `Vaccine không hoạt động: ${filteredData.filter((item) => !item.isActive).length}`, style: "summary" },
+      ],
+      styles: {
+        header: {
+          fontSize: 18,
+          bold: true,
+          margin: [0, 0, 0, 10],
+        },
+        subheader: {
+          fontSize: 12,
+          margin: [0, 0, 0, 20],
+        },
+        summary: {
+          fontSize: 12,
+          margin: [0, 10, 0, 0],
+        },
+      },
+      defaultStyle: {
+        font: "Roboto",
+      },
+    };
+
+    try {
+      pdfMake.createPdf(docDefinition).download("danh-sach-vaccine.pdf");
+      toast.success("Xuất PDF thành công");
+    } catch (error) {
+      console.error("Lỗi khi tạo PDF:", error);
+      toast.error("Có lỗi khi xuất PDF");
+    }
+  };
+
   return (
     <div className="Vaccine">
       <h1>Danh sách vaccines</h1>
@@ -264,6 +340,9 @@ function Vaccine() {
         </div>
 
         <div>
+          <Button color="purple" variant="solid" onClick={exportPDF}>
+            Xuất file pdf
+          </Button>
           <Button type="primary" onClick={handleOpenModal}>
             Thêm mới vaccine
           </Button>
