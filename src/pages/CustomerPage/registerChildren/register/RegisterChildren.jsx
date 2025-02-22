@@ -7,10 +7,12 @@ import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import "./RegisterChildren.scss";
 import api from "../../../../config/axios";
+import { useSelector } from "react-redux";
 
 const RegisterChildren = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const user = useSelector((state) => state.user);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -18,64 +20,27 @@ const RegisterChildren = () => {
       navigate("/login");
       return;
     }
-
-    try {
-      // Decode the JWT token
-      const decodedToken = jwtDecode(token);
-      console.log("Decoded token:", decodedToken); // For debugging
-
-      // Extract userId - try different possible fields
-      const userId = decodedToken.sub || decodedToken.userId || decodedToken.id;
-
-      if (!userId) {
-        console.error("No userId found in token:", decodedToken);
-        toast.error("Unable to find user information");
-        return;
-      }
-
-      // Set the decoded userId to the form
-      form.setFieldValue("userId", userId);
-    } catch (error) {
-      console.error("Error decoding token:", error);
-      toast.error("Error processing user information");
-      navigate("/login");
-    }
-  }, [navigate, form, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const onFinish = async (values) => {
     try {
-      // Get the userId from form
-      const userId = form.getFieldValue("userId");
-
-      if (!userId) {
-        toast.error("User ID is missing. Please try logging in again.");
-        navigate("/login");
-        return;
-      }
-
       const formattedData = {
-        userId: userId, // Make sure this is included
+        userId: user.userId,
         fullName: values.fullName,
         dob: values.dob.format("DD-MM-YYYY"),
         gender: values.gender,
         address: values.address,
       };
 
-      console.log("Submitting data:", formattedData); // For debugging
-
       const response = await api.post("user/child", formattedData);
-      console.log("Response:", response); // For debugging
 
       if (response.data) {
         form.resetFields();
         toast.success("Đăng ký hồ sơ trẻ thành công!");
-        navigate("/register-children-success");
       }
     } catch (error) {
       console.error("Error registering child:", error);
-      const errorMessage =
-        error.response?.data?.errors?.UserId?.[0] || error.response?.data?.message || "Đăng ký hồ sơ trẻ thất bại!";
-      toast.error(errorMessage);
     }
   };
 

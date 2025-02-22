@@ -86,6 +86,12 @@ function Batch() {
       key: "quantity",
     },
     {
+      title: "Ngày sản xuất",
+      dataIndex: "productionDate",
+      key: "productionDate",
+      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
+    },
+    {
       title: "Ngày hết hạn",
       dataIndex: "expirationDate",
       key: "expirationDate",
@@ -252,13 +258,13 @@ function Batch() {
     form.resetFields();
   };
 
-  const vaccinesNotInBatch = vaccines.filter(
-    (vaccine) => !patchs.some((batch) => batch.vaccine && batch.vaccine.vaccineId === vaccine.vaccineId)
-  );
+  // const vaccinesNotInBatch = vaccines.filter(
+  //   (vaccine) => !patchs.some((batch) => batch.vaccine && batch.vaccine.vaccineId === vaccine.vaccineId)
+  // );
 
   const availableVaccines = isEdit
-    ? [...vaccinesNotInBatch, vaccines.find((v) => v.vaccineId === editingBatch?.vaccine?.vaccineId)].filter(Boolean)
-    : vaccinesNotInBatch;
+    ? [...vaccines, vaccines.find((v) => v.vaccineId === editingBatch?.vaccine?.vaccineId)].filter(Boolean)
+    : vaccines;
 
   const DetailModal = ({ batch, visible, onClose }) => {
     if (!batch) return null;

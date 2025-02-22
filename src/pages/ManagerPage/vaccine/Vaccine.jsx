@@ -457,7 +457,7 @@ function Vaccine() {
 
               <Form.Item
                 name="duration"
-                label="Duration (days)"
+                label="Duration (weeks)"
                 rules={[{ required: true, message: "Please enter duration" }]}
               >
                 <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter duration" />
