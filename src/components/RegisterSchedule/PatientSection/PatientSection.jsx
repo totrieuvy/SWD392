@@ -1,144 +1,140 @@
-import React, { useState } from 'react';
-import { Form, Input, DatePicker, Segmented, Select, Card, Row, Col, ConfigProvider } from 'antd';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useState, useEffect } from "react";
+import { Card, Typography } from "antd";
+import { useSelector, useDispatch } from "react-redux";
+import { setSelectedVaccinatedChild } from "../../../redux/features/selectedVaccinatedChildren";
+import api from "../../../config/axios";
+import "./PatientSection.scss";
+
+const { Text } = Typography;
 
 const PatientSection = () => {
-  const [form] = Form.useForm();
-  const [selectedCity, setSelectedCity] = useState(null);
-  const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [children, setChildren] = useState([]);
+  const [error, setError] = useState(null);
 
-  const cities = [
-    { value: 'hanoi', label: 'Ha Noi' },
-    { value: 'hcm', label: 'Ho Chi Minh' }
-  ];
+  // Redux
+  const dispatch = useDispatch();
+  const userId = useSelector((state) => state.user?.userId);
+  const userName = useSelector((state) => state.user?.userName);
+  const selectedVaccinatedChild = useSelector((state) => state.selectedVaccinatedChild?.selectedChild);
 
-  const districts = [
-    { value: 'thuduc', label: 'Thu Duc' },
-    { value: 'district1', label: 'District 1' },
-    { value: 'district2', label: 'District 2' },
-    { value: 'district3', label: 'District 3' },
-    { value: 'district4', label: 'District 4' },
-    { value: 'district5', label: 'District 5' }
-  ];
+  useEffect(() => {
+    if (userId) {
+      fetchChildren();
+    }
+  }, [userId]);
 
-  const wards = [
-    { value: 'linhchieu', label: 'Linh Chieu' },
-    { value: 'binhtho', label: 'Binh Tho' },
-    { value: 'truongtho', label: 'Truong Tho' }
-  ];
+  const fetchChildren = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`user/${userId}`);
+
+      if (response.data.statusCode === 200 && response.data.data.listChildRes) {
+        setChildren(response.data.data.listChildRes);
+
+        // Select first child if none is selected
+        if (response.data.data.listChildRes.length > 0 && !selectedVaccinatedChild) {
+          dispatch(setSelectedVaccinatedChild(response.data.data.listChildRes[0]));
+        }
+      } else {
+        setError("Không thể lấy dữ liệu trẻ em");
+      }
+    } catch (err) {
+      console.error("Error fetching children:", err);
+      setError(err.message || "Đã xảy ra lỗi khi lấy dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectChild = (child) => {
+    dispatch(setSelectedVaccinatedChild(child));
+  };
+
+  if (!userId) return <div>Vui lòng đăng nhập để xem thông tin</div>;
+  if (loading) return <div className="loading-spinner">Đang tải...</div>;
+  if (error) return <div className="error-message">Lỗi: {error}</div>;
 
   return (
-    <ConfigProvider
-      theme={{
-        components: {
-          Segmented: {
-            itemSelectedBg: '#65558F',
-            itemSelectedColor: '#ffffff',
-          },
-        },
+    <Card
+      title="Thông tin bệnh nhân"
+      className="max-w-6xl mx-auto mb-4"
+      headStyle={{
+        backgroundColor: "#65558F",
+        color: "#ffffff",
       }}
     >
-      <Card title="Patient Info" className="max-w-6xl mx-auto"
-         headStyle={{ 
-          backgroundColor: '#65558F', 
-          color: '#ffffff'
-        }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          requiredMark={false}
-        >
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="Name"
-                name="name"
-                rules={[{ required: true, message: 'Please input your name' }]}
-              >
-                <Input placeholder="name" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="Date of birth"
-                name="dateOfBirth"
-                rules={[{ required: true, message: 'Please select your date of birth' }]}
-              >
-                <DatePicker
-                  style={{ width: '100%' }}
-                  format="DD/MM/YYYY"
-                  placeholder="dd/mm/yyyy"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="Gender"
-                name="gender"
-                rules={[{ required: true, message: 'Please select your gender' }]}
-              >
-                <Segmented 
-                  options={['Male', 'Female']} 
-                  block 
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+      <div className="children-profile-container">
+        <h2 className="profile-title">Chọn bệnh nhân của {userName}</h2>
 
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="City/Province"
-                name="city"
-                rules={[{ required: true, message: 'Please select your city' }]}
+        {children.length === 0 ? (
+          <p className="no-children-message">Không có thông tin trẻ em</p>
+        ) : (
+          <div className="children-grid">
+            {children.map((child) => (
+              <div
+                key={child.childId}
+                className={`child-card ${selectedVaccinatedChild?.childId === child.childId ? "selected" : ""}`}
+                onClick={() => handleSelectChild(child)}
               >
-                <Select
-                  placeholder="select"
-                  options={cities}
-                  onChange={(value) => setSelectedCity(value)}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="District"
-                name="district"
-                rules={[{ required: true, message: 'Please select your district' }]}
-              >
-                <Select
-                  placeholder="select"
-                  options={districts}
-                  onChange={(value) => setSelectedDistrict(value)}
-                  disabled={!selectedCity}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="Ward"
-                name="ward"
-                rules={[{ required: true, message: 'Please select your ward' }]}
-              >
-                <Select
-                  placeholder="select"
-                  options={wards}
-                  disabled={!selectedDistrict}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+                <div className="child-avatar">
+                  {child.gender === "male" ? (
+                    <div className="avatar-icon male">👦</div>
+                  ) : (
+                    <div className="avatar-icon female">👧</div>
+                  )}
+                </div>
+                <div className="child-info">
+                  <h3 className="child-name">{child.fullName}</h3>
+                  <div className="child-details">
+                    <p>
+                      <span>Ngày sinh:</span> {child.dob}
+                    </p>
+                    <p>
+                      <span>Giới tính:</span> {child.gender === "male" ? "Nam" : "Nữ"}
+                    </p>
+                  </div>
+                </div>
+                {selectedVaccinatedChild?.childId === child.childId && (
+                  <div className="selected-indicator">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M5 12L10 17L19 8"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
-          <Form.Item
-            label="Address"
-            name="address"
-            rules={[{ required: true, message: 'Please input your address' }]}
-          >
-            <Input placeholder="address" rows={4} />
-          </Form.Item>
-        </Form>
-      </Card>
-    </ConfigProvider>
+        {selectedVaccinatedChild && (
+          <div className="selected-child-details">
+            <h3>Thông tin chi tiết</h3>
+            <div className="details-card">
+              <p>
+                <span>Họ và tên:</span> {selectedVaccinatedChild.fullName}
+              </p>
+              <p>
+                <span>Ngày sinh:</span> {selectedVaccinatedChild.dob}
+              </p>
+              <p>
+                <span>Giới tính:</span> {selectedVaccinatedChild.gender === "male" ? "Nam" : "Nữ"}
+              </p>
+              <p>
+                <span>ID:</span> {selectedVaccinatedChild.childId}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 };
 

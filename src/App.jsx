@@ -23,6 +23,7 @@ import VaccineDisplay from "./pages/CustomerPage/VaccineInfo/VaccineDisplay";
 import VaccineDetail from "./pages/CustomerPage/VaccineInfo/VaccineDetail";
 import Batch from "./pages/ManagerPage/batch/Batch";
 import RegisterChildren from "./pages/CustomerPage/registerChildren/register/RegisterChildren";
+import ChildrenProfile from "./pages/CustomerPage/childrenProfile/ChildrenProfile";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -59,6 +60,10 @@ const App = () => {
         {
           path: "detail/:vaccineId",
           element: <Detail />,
+        },
+        {
+          path: "children-profile",
+          element: <ChildrenProfile />,
         },
         {
           path: "about-us",
