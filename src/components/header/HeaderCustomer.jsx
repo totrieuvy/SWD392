@@ -39,7 +39,7 @@ const Header = () => {
 
   const userMenu = (
     <Menu>
-      <Menu.Item key="records" icon={<UserOutlined />}>
+      <Menu.Item key="profile" icon={<UserOutlined />}>
         <Link to="/children-profile">Hồ sơ trẻ em</Link>
       </Menu.Item>
       <Menu.Item key="records" icon={<UserOutlined />}>

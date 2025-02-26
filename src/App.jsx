@@ -25,6 +25,7 @@ import Batch from "./pages/ManagerPage/batch/Batch";
 import RegisterChildren from "./pages/CustomerPage/registerChildren/register/RegisterChildren";
 import ChildrenProfile from "./pages/CustomerPage/childrenProfile/ChildrenProfile";
 import StaffPage from "./pages/StaffPage/StaffPage";
+import DoctorPage from "./pages/DoctorPage/DoctorPage";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -175,6 +176,10 @@ const App = () => {
     {
       path: "/staff",
       element: <StaffPage />,
+    },
+    {
+      path: "/doctor",
+      element: <DoctorPage />,
     },
   ]);
 

@@ -104,8 +104,35 @@ function ChildrenProfile() {
               <span>Giới tính:</span> {selectedChild.gender === "male" ? "Nam" : "Nữ"}
             </p>
             <p>
-              <span>ID:</span> {selectedChild.childId}
+              <span>Địa chỉ:</span> {selectedChild.address || "Chưa cập nhật"}
             </p>
+            {selectedChild.vaccinatedInformation && selectedChild.vaccinatedInformation.length > 0 && (
+              <div className="vaccination-info">
+                <h4>Thông tin tiêm chủng</h4>
+                {selectedChild.vaccinatedInformation && selectedChild.vaccinatedInformation.length > 0 ? (
+                  selectedChild.vaccinatedInformation.map((vaccine, index) => (
+                    <div key={index} className="vaccine-item">
+                      <p>
+                        <span>Loại vaccine:</span> {vaccine.vaccineType}
+                      </p>
+                      <p>
+                        <span>Ngày dự kiến:</span> {new Date(vaccine.scheduleDate).toLocaleDateString("vi-VN")}
+                      </p>
+                      {vaccine.actualDate && (
+                        <p>
+                          <span>Ngày thực tế:</span> {new Date(vaccine.actualDate).toLocaleDateString("vi-VN")}
+                        </p>
+                      )}
+                      <p>
+                        <span>Trạng thái:</span> {vaccine.isVaccinated ? "Đã tiêm" : "Chưa tiêm"}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-vaccine-message">Chưa tiêm mũi nào</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

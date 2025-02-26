@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
-import "./StaffPage.scss"; 
+import "./StaffPage.scss";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux/features/userSlice";
+import { useNavigate } from "react-router-dom";
 
 function StaffPage() {
   const [schedule, setSchedule] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchSchedule();
@@ -13,7 +18,7 @@ function StaffPage() {
 
     const interval = setInterval(() => {
       fetchSchedule();
-    }, 40000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -50,6 +55,16 @@ function StaffPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem("token");
+      dispatch(logout());
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   const filteredSchedule = schedule.filter((item) =>
     item.childrenName.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -57,13 +72,23 @@ function StaffPage() {
   return (
     <div className="staff-page">
       <div className="container">
-        <h1>Lịch tiêm chủng của khách</h1>
+        <div className="header">
+          <h1>Vaccination Schedule</h1>
+          <button className="logout-button" onClick={handleLogout}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Logout
+          </button>
+        </div>
 
         <div className="search-container">
           <div className="search-box">
             <input
               type="text"
-              placeholder="Nhập tên trẻ em"
+              placeholder="Search by child name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -90,25 +115,25 @@ function StaffPage() {
           <table>
             <thead>
               <tr>
-                <th>Tên trẻ em</th>
-                <th>Tên phụ huynh</th>
-                <th>Tên Vaccine</th>
-                <th>Ngày đăng kí chích</th>
-                <th>Trạng thái</th>
-                <th>Điện thoại</th>
-                <th>Hành động</th>
+                <th>Child Name</th>
+                <th>Vaccine</th>
+                <th>Schedule Date</th>
+                <th>Status</th>
+                <th>Parent Name</th>
+                <th>Phone</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredSchedule.map((item, index) => (
                 <tr key={index}>
                   <td className="child-name">{item.childrenName}</td>
-                  <td>{item.parentsName}</td>
                   <td>{item.vaccineName}</td>
                   <td>{item.scheduleDate}</td>
                   <td>
                     <span className={`status-badge ${item.scheduleStatus.toLowerCase()}`}>{item.scheduleStatus}</span>
                   </td>
+                  <td>{item.parentsName}</td>
                   <td>{item.phoneNumber}</td>
                   <td>
                     <button
@@ -116,7 +141,7 @@ function StaffPage() {
                       disabled={item.scheduleStatus === "Completed"}
                       className={`confirm-button ${item.scheduleStatus === "Completed" ? "disabled" : ""}`}
                     >
-                      {item.scheduleStatus === "Completed" ? "Đã checkin" : " Chưa checkin"}
+                      {item.scheduleStatus === "Completed" ? "Confirmed" : "Confirm Check-in"}
                     </button>
                   </td>
                 </tr>

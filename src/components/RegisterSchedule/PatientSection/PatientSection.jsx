@@ -1,12 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
-import { Card, Typography } from "antd";
+import { Card } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedVaccinatedChild } from "../../../redux/features/selectedVaccinatedChildren";
 import api from "../../../config/axios";
 import "./PatientSection.scss";
-
-const { Text } = Typography;
 
 const PatientSection = () => {
   const [loading, setLoading] = useState(false);
@@ -128,7 +126,7 @@ const PatientSection = () => {
                 <span>Giới tính:</span> {selectedVaccinatedChild.gender === "male" ? "Nam" : "Nữ"}
               </p>
               <p>
-                <span>ID:</span> {selectedVaccinatedChild.childId}
+                <span>Địa chỉ:</span> {selectedVaccinatedChild.address}
               </p>
             </div>
           </div>

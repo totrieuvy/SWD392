@@ -48,6 +48,8 @@ function Login() {
           navigate("/manager");
         } else if (roleName === "staff") {
           navigate("/staff");
+        } else if (roleName === "doctor") {
+          navigate("/doctor");
         }
       }
     } catch (error) {
