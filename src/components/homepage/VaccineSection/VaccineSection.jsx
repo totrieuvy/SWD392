@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Typography, Row, Col, Card, Select } from "antd";
+import { Typography, Row, Col, Card, Select, Pagination } from "antd";
 import { Link } from "react-router-dom";
 import api from "../../../config/axios";
 import "./VaccineSection.scss";
@@ -12,14 +12,26 @@ const VaccineSection = () => {
   const [selectedManufacturer, setSelectedManufacturer] = useState("");
   const [selectedAge, setSelectedAge] = useState("");
   const [selectedCountry, setSelectedCountry] = useState([]);
-  // State cho sort theo giá: "asc" (tăng dần), "desc" (giảm dần) hoặc "" (mặc định)
   const [priceSortOrder, setPriceSortOrder] = useState("");
+
+  // Pagination state
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const fetchVaccines = async () => {
     try {
-      const response = await api.get("v1/vaccine");
+      // Update API call to include pagination parameters
+      const response = await api.get(`v1/vaccine?pageIndex=${pageIndex}&pageSize=${pageSize}`);
       if (response.data && response.data.statusCode === 200) {
-        setVaccines(response.data.data);
+        setVaccines(response.data.data || []);
+        // If the API returns total count in the response, update it
+        if (response.data.totalItems) {
+          setTotalItems(response.data.totalItems);
+        } else if (response.data.data) {
+          // Fallback if API doesn't return total count
+          setTotalItems(response.data.data.length);
+        }
       }
     } catch (error) {
       console.error("Error fetching vaccines:", error);
@@ -29,7 +41,7 @@ const VaccineSection = () => {
   useEffect(() => {
     fetchVaccines();
     document.title = "Home";
-  }, []);
+  }, [pageIndex, pageSize]); // Re-fetch when pagination changes
 
   // Lấy danh sách tên nhà sản xuất duy nhất
   const manufacturerOptions = Array.from(new Set(vaccines.map((vaccine) => vaccine.manufacturer.name)));
@@ -47,6 +59,13 @@ const VaccineSection = () => {
   const countryOptions = Array.from(new Set(vaccines.map((vaccine) => vaccine.manufacturer.countryName))).sort((a, b) =>
     a.localeCompare(b)
   );
+
+  // Handle filter changes
+  const applyFilters = () => {
+    // Reset to first page when filters change
+    setPageIndex(1);
+    fetchVaccines();
+  };
 
   // Lọc danh sách vaccine theo các filter đã chọn
   const filteredVaccines = vaccines.filter((vaccine) => {
@@ -68,8 +87,6 @@ const VaccineSection = () => {
   });
 
   // Sắp xếp danh sách vaccine
-  // Nếu có chọn sắp xếp theo giá (priceSortOrder), thì sắp xếp theo giá theo thứ tự tương ứng
-  // Ngược lại, sắp xếp theo độ tuổi (minAge tăng dần), nếu bằng nhau thì sắp xếp theo tên vaccine
   let sortedVaccines = [...filteredVaccines];
   if (priceSortOrder) {
     sortedVaccines.sort((a, b) => {
@@ -83,6 +100,12 @@ const VaccineSection = () => {
       return a.vaccineName.localeCompare(b.vaccineName);
     });
   }
+
+  // Handle pagination change
+  const handlePaginationChange = (page, pageSize) => {
+    setPageIndex(page);
+    setPageSize(pageSize);
+  };
 
   return (
     <section className="py-16 bg-gray-50">
@@ -98,7 +121,10 @@ const VaccineSection = () => {
                 <Select
                   placeholder="Chọn nhà sản xuất"
                   value={selectedManufacturer || undefined}
-                  onChange={(value) => setSelectedManufacturer(value)}
+                  onChange={(value) => {
+                    setSelectedManufacturer(value);
+                    applyFilters();
+                  }}
                   allowClear
                   style={{ width: "100%" }}
                 >
@@ -114,7 +140,10 @@ const VaccineSection = () => {
                 <Select
                   placeholder="Chọn độ tuổi"
                   value={selectedAge || undefined}
-                  onChange={(value) => setSelectedAge(value)}
+                  onChange={(value) => {
+                    setSelectedAge(value);
+                    applyFilters();
+                  }}
                   allowClear
                   style={{ width: "100%" }}
                 >
@@ -131,7 +160,10 @@ const VaccineSection = () => {
                   mode="multiple"
                   placeholder="Chọn quốc gia"
                   value={selectedCountry}
-                  onChange={(value) => setSelectedCountry(value)}
+                  onChange={(value) => {
+                    setSelectedCountry(value);
+                    applyFilters();
+                  }}
                   allowClear
                   style={{ width: "100%" }}
                 >
@@ -147,7 +179,10 @@ const VaccineSection = () => {
                 <Select
                   placeholder="Chọn sắp xếp"
                   value={priceSortOrder || undefined}
-                  onChange={(value) => setPriceSortOrder(value)}
+                  onChange={(value) => {
+                    setPriceSortOrder(value);
+                    applyFilters();
+                  }}
                   allowClear
                   style={{ width: "100%" }}
                 >
@@ -181,6 +216,18 @@ const VaccineSection = () => {
                   </Link>
                 </Col>
               ))}
+            </Row>
+            {/* Pagination controls */}
+            <Row className="mt-6" justify="center">
+              <Pagination
+                current={pageIndex}
+                pageSize={pageSize}
+                total={totalItems}
+                onChange={handlePaginationChange}
+                showSizeChanger
+                showQuickJumper
+                showTotal={(total) => `Tổng cộng ${total} vaccine`}
+              />
             </Row>
           </Col>
         </Row>

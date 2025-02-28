@@ -156,6 +156,7 @@ function Batch() {
     setEditingBatch(batch);
 
     form.setFieldsValue({
+      batchId: batch.batchId,
       vaccine: {
         key: batch.vaccine.vaccineId,
         value: batch.vaccine.vaccineId,
@@ -164,6 +165,7 @@ function Batch() {
       productionDate: dayjs(batch.productionDate),
       expirationDate: dayjs(batch.expirationDate),
       quantity: batch.quantity,
+      isActive: batch.isActive,
     });
   };
 
@@ -231,10 +233,17 @@ function Batch() {
           toast.error("Không tìm thấy batch ID để cập nhật");
           return;
         }
-        await api.put(`v1/batch/${editingBatch.batchId}`, payload);
+        await api.put(`v1/batch/${editingBatch.batchId}`, {
+          ...payload,
+          batchId: editingBatch.batchId,
+        });
         toast.success("Cập nhật batch thành công");
       } else {
-        await api.post("v1/batch", payload);
+        // For new batch, include batchId in the payload
+        await api.post("v1/batch", {
+          ...payload,
+          batchId: values.batchId || null, // Add batchId field for POST
+        });
         toast.success("Thêm mới batch thành công");
       }
 
@@ -258,10 +267,6 @@ function Batch() {
     form.resetFields();
   };
 
-  // const vaccinesNotInBatch = vaccines.filter(
-  //   (vaccine) => !patchs.some((batch) => batch.vaccine && batch.vaccine.vaccineId === vaccine.vaccineId)
-  // );
-
   const availableVaccines = isEdit
     ? [...vaccines, vaccines.find((v) => v.vaccineId === editingBatch?.vaccine?.vaccineId)].filter(Boolean)
     : vaccines;
@@ -282,6 +287,7 @@ function Batch() {
         width={800}
       >
         <Descriptions bordered column={1}>
+          <Descriptions.Item label="Batch ID">{batch.batchId}</Descriptions.Item>
           <Descriptions.Item label="Tên Vaccine">{batch.vaccine.vaccineName}</Descriptions.Item>
           <Descriptions.Item label="Hình ảnh">
             <Image
@@ -356,6 +362,12 @@ function Batch() {
         confirmLoading={loading}
       >
         <Form form={form} layout="vertical">
+          {!isEdit && (
+            <Form.Item label="Batch ID" name="batchId" rules={[{ required: true, message: "Vui lòng nhập Batch ID" }]}>
+              <Input placeholder="Nhập Batch ID" />
+            </Form.Item>
+          )}
+
           <Form.Item label="Tên Vaccine" name="vaccine" rules={[{ required: true, message: "Vui lòng chọn vaccine" }]}>
             <Select
               placeholder="Chọn vaccine"
