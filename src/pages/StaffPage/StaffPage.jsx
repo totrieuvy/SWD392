@@ -43,15 +43,18 @@ function StaffPage() {
     }
   };
 
-  const handleConfirmCheckIn = async (childrenName) => {
-    setLoading(true);
-    try {
-      await api.post("schedule/confirm", { childrenName });
-      fetchSchedule();
-    } catch (error) {
-      console.error("Error confirming check-in:", error);
-    } finally {
-      setLoading(false);
+  const handleConfirmCheckIn = async (scheduleId) => {
+    // Show confirmation alert
+    if (window.confirm("Are you sure you want to confirm this check-in?")) {
+      setLoading(true);
+      try {
+        await api.put(`schedule/check-in/${scheduleId}`);
+        fetchSchedule();
+      } catch (error) {
+        console.error("Error confirming check-in:", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -68,6 +71,25 @@ function StaffPage() {
   const filteredSchedule = schedule.filter((item) =>
     item.childrenName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Modified function to only show button for 'upcoming' status
+  const isButtonDisabled = (status) => {
+    return status.toLowerCase() !== "upcoming";
+  };
+
+  // Modified function to only display text for specific statuses
+  const getButtonText = (status) => {
+    if (status.toLowerCase() === "completed") return "";
+    if (status.toLowerCase() === "vaccinated") return "";
+    if (status.toLowerCase() === "check-in") return "";
+    if (status.toLowerCase() === "upcoming") return "";
+    return "";
+  };
+
+  // Modified function to determine if button should be shown
+  const shouldShowButton = (status) => {
+    return status.toLowerCase() === "upcoming";
+  };
 
   return (
     <div className="staff-page">
@@ -136,13 +158,13 @@ function StaffPage() {
                   <td>{item.parentsName}</td>
                   <td>{item.phoneNumber}</td>
                   <td>
-                    <button
-                      onClick={() => handleConfirmCheckIn(item.childrenName)}
-                      disabled={item.scheduleStatus === "Completed"}
-                      className={`confirm-button ${item.scheduleStatus === "Completed" ? "disabled" : ""}`}
-                    >
-                      {item.scheduleStatus === "Completed" ? "Confirmed" : "Confirm Check-in"}
-                    </button>
+                    {shouldShowButton(item.scheduleStatus) ? (
+                      <button onClick={() => handleConfirmCheckIn(item.scheduleId)} className="confirm-button">
+                        Confirm Check-in
+                      </button>
+                    ) : (
+                      <span className="status-text">{getButtonText(item.scheduleStatus)}</span>
+                    )}
                   </td>
                 </tr>
               ))}

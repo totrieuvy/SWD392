@@ -1,5 +1,7 @@
 $primary-color: #4361ee;
 $completed-color: #10b981;
+$vaccinated-color: #059669;
+$check-in-color: #f59e0b;
 $upcoming-color: #ef4444;
 $background-color: #f5f7fa;
 $card-bg-color: #ffffff;
@@ -184,22 +186,26 @@ $border-radius: 8px;
           color: white;
         }
 
-        &.upcoming {
-          background-color: $upcoming-color;
+        &.vaccinated {
+          background-color: $vaccinated-color;
           color: white;
         }
 
-        &.pending,
-        &.cancelled {
-          background-color: $text-light;
+        &.check-in {
+          background-color: $check-in-color;
+          color: white;
+        }
+
+        &.upcoming {
+          background-color: $upcoming-color;
           color: white;
         }
       }
 
       .confirm-button {
-        padding: 8px 16px;
+        padding: 8px 5px;
         border-radius: $border-radius;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 500;
         border: none;
         background-color: $primary-color;
