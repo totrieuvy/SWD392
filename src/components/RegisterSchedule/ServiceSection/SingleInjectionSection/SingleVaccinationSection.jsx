@@ -21,6 +21,13 @@ const VaccinationSection = () => {
   const selectedVaccinatedChild = useSelector((state) => state.selectedVaccinatedChild.selectedChild);
   const childId = selectedVaccinatedChild?.childId || "";
   const childName = selectedVaccinatedChild?.fullName || "";
+  const childDob = selectedVaccinatedChild?.dob || "";
+  const childGender = selectedVaccinatedChild?.gender || "";
+  const childAddress = selectedVaccinatedChild?.address || "";
+
+  // Get userId from Redux store
+  const user = useSelector((state) => state.user);
+  const userId = user?.userId || "";
 
   useEffect(() => {
     const fetchVaccines = async () => {
@@ -118,9 +125,30 @@ const VaccinationSection = () => {
     }
   };
 
+  // Calculate total price of selected vaccines
+  const calculateTotal = () => {
+    const total = vaccines
+      .filter((vaccine) => selectedVaccines.includes(vaccine.vaccineId))
+      .reduce((sum, vaccine) => sum + vaccine.price, 0);
+
+    return total;
+  };
+
+  const formatDateForAPI = (dateString) => {
+    if (!dateString) return "";
+    // Convert from YYYY-MM-DD to DD-MM-YYYY
+    const date = dayjs(dateString);
+    return date.format("DD-MM-YYYY");
+  };
+
   const submitSchedule = async () => {
     if (!childId) {
       message.error("No child selected. Please select a child first.");
+      return;
+    }
+
+    if (!userId) {
+      message.error("User information not available. Please login again.");
       return;
     }
 
@@ -134,36 +162,67 @@ const VaccinationSection = () => {
       return;
     }
 
-    if (temporarySchedules.length === 0) {
-      message.warning("Please wait for the schedule preview to be generated");
-      return;
-    }
-
     try {
       setLoading(true);
 
-      // Create the request payload with the new format
-      const scheduleRequest = {
-        vaccineIds: selectedVaccines,
+      // Format the date as DD-MM-YYYY for the order API
+      const formattedInjectionDate = formatDateForAPI(vaccinationDate);
+
+      // 1. First create an order using the new API format
+      const orderPayload = {
+        userId: userId,
         childId: childId,
-        startDate: vaccinationDate,
+        fullName: childName,
+        dob: childDob,
+        gender: childGender,
+        address: childAddress,
+        injectionDate: formattedInjectionDate,
+        amount: calculateTotal(),
+        vaccineIdList: selectedVaccines,
       };
 
-      // Call the API to confirm the schedule
-      const response = await api.post("schedule", [scheduleRequest]);
+      console.log("Order payload:", orderPayload);
+      // Call the order API
+      const orderResponse = await api.post("order", orderPayload);
 
-      if (response.data && response.data.code === "Success") {
-        message.success("Vaccination schedule created successfully");
-        // Update the list of scheduled vaccines
-        setScheduledVaccines(response.data.data || []);
-        // Clear temporary schedules after confirmation
-        setTemporarySchedules([]);
+      if (orderResponse.data && orderResponse.data.code === "Success") {
+        message.success("Vaccination order created successfully");
+
+        // Handle redirect to payment URL if provided in the response
+        if (orderResponse.data.data) {
+          // Redirect to the payment URL
+          window.location.href = orderResponse.data.data;
+          return; // Exit early since we're redirecting
+        }
+
+        // If no payment URL, continue with the schedule creation
+        // 2. Then create the schedule as before (using original YYYY-MM-DD format)
+        const scheduleRequest = {
+          vaccineIds: selectedVaccines,
+          childId: childId,
+          startDate: vaccinationDate, // Keep original format for schedule API
+        };
+
+        const scheduleResponse = await api.post("schedule", [scheduleRequest]);
+
+        if (scheduleResponse.data && scheduleResponse.data.code === "Success") {
+          message.success("Vaccination schedule created successfully");
+          // Update the list of scheduled vaccines
+          setScheduledVaccines(scheduleResponse.data.data || []);
+          // Clear temporary schedules after confirmation
+          setTemporarySchedules([]);
+          // Clear selected vaccines after successful submission
+          setSelectedVaccines([]);
+          setVaccinationDate(null);
+        } else {
+          message.error("Failed to schedule vaccinations");
+        }
       } else {
-        message.error("Failed to schedule vaccinations");
+        message.error("Failed to create vaccination order");
       }
     } catch (error) {
-      console.error("Error scheduling vaccines:", error);
-      message.error("Error occurred while scheduling vaccines");
+      console.error("Error processing vaccination request:", error);
+      message.error(error.response?.data?.message || "Error occurred while processing your request");
     } finally {
       setLoading(false);
     }
@@ -198,17 +257,13 @@ const VaccinationSection = () => {
     }));
   };
 
-  // Calculate total price of selected vaccines
-  const calculateTotal = () => {
-    const total = vaccines
-      .filter((vaccine) => selectedVaccines.includes(vaccine.vaccineId))
-      .reduce((sum, vaccine) => sum + vaccine.price, 0);
-
+  // Format total price for display
+  const formatTotalPrice = () => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
       maximumFractionDigits: 0,
-    }).format(total);
+    }).format(calculateTotal());
   };
 
   // Get selected vaccine details for display
@@ -314,19 +369,13 @@ const VaccinationSection = () => {
 
             <div className="selected-vaccines__total">
               <span className="selected-vaccines__total-label">Tổng cộng:</span>
-              <span className="selected-vaccines__total-amount">{calculateTotal()}</span>
+              <span className="selected-vaccines__total-amount">{formatTotalPrice()}</span>
             </div>
 
             <button
               className="selected-vaccines__button"
               onClick={submitSchedule}
-              disabled={
-                !childId ||
-                selectedVaccines.length === 0 ||
-                !vaccinationDate ||
-                temporarySchedules.length === 0 ||
-                loading
-              }
+              disabled={!childId || !userId || selectedVaccines.length === 0 || !vaccinationDate || loading}
             >
               {loading ? "ĐANG XỬ LÝ..." : "ĐĂNG KÝ MŨI TIÊM"}
             </button>
