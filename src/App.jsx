@@ -26,6 +26,7 @@ import RegisterChildren from "./pages/CustomerPage/registerChildren/register/Reg
 import ChildrenProfile from "./pages/CustomerPage/childrenProfile/ChildrenProfile";
 import StaffPage from "./pages/StaffPage/StaffPage";
 import DoctorPage from "./pages/DoctorPage/DoctorPage";
+import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -62,6 +63,10 @@ const App = () => {
         {
           path: "detail/:vaccineId",
           element: <Detail />,
+        },
+        {
+          path: "payment-success",
+          element: <PaymentSuccess />,
         },
         {
           path: "children-profile",

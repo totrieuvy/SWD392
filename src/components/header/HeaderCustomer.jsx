@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import "./Header.css";
 import { logout } from "../../redux/features/userSlice";
+import { persistor } from "../../redux/store";
 
 const Header = () => {
   const [showDrawer, setShowDrawer] = useState(false);
@@ -34,6 +35,8 @@ const Header = () => {
   const handleLogout = () => {
     dispatch(logout());
     localStorage.removeItem("token");
+    // Force purge the persisted state
+    persistor.purge();
     navigate("/");
   };
 
@@ -112,7 +115,7 @@ const Header = () => {
             </Link>
 
             {isMobile &&
-              (user ? (
+              (user.userName ? (
                 <Dropdown overlay={userMenu} trigger={["click"]}>
                   <Button type="text" className="HomePage-Header-welcome">
                     Welcome, {user.userName}
@@ -130,7 +133,7 @@ const Header = () => {
           <div className="HomePage-Header-submenu-container">
             <div className="HomePage-Header-submenu-wrapper">
               <Menu mode="horizontal" className="HomePage-Header-desktop-menu" items={menuItems} />
-              {user ? (
+              {user.userName ? (
                 <Dropdown overlay={userMenu} trigger={["click"]}>
                   <Button type="text" className="HomePage-Header-welcome">
                     Welcome, {user.userName}

@@ -61,7 +61,7 @@ const DoctorPage = () => {
         const response = await api.get("schedule");
         if (response.data.statusCode === 200) {
           const filteredData = response.data.data.filter((item) =>
-            ["Check-in", "Vaccinated", "Completed"].includes(item.scheduleStatus)
+            ["check-in", "vaccinated", "completed"].includes(item.scheduleStatus)
           );
           setSchedules(filteredData);
         }
@@ -86,7 +86,7 @@ const DoctorPage = () => {
         foodAllergy: false,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [medicalInfo.noChronic]);
 
   // Handle other disease checkboxes
@@ -97,7 +97,7 @@ const DoctorPage = () => {
         noChronic: false,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [medicalInfo.heartDisease, medicalInfo.hypertension, medicalInfo.drugAllergy, medicalInfo.foodAllergy]);
 
   const handleSelectChild = (record) => {
@@ -504,6 +504,21 @@ const DoctorPage = () => {
                 <p>Bệnh nhân: {selectedChild?.childrenName}</p>
                 <p>Vaccine: {selectedChild?.vaccineName}</p>
                 <p>Trạng thái: {vaccineAdministered ? "Đã tiêm" : "Chưa tiêm"}</p>
+              </div>
+
+              <div className="vaccine-batch-section">
+                <h3>Thông tin lô vaccine</h3>
+                <Form.Item
+                  name="vaccineBatch"
+                  label="Mã lô vaccine"
+                  rules={[{ required: true, message: "Vui lòng nhập mã lô vaccine" }]}
+                >
+                  <Input
+                    value={postVaccineInfo.vaccineBatch}
+                    onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, vaccineBatch: e.target.value })}
+                    placeholder="Ví dụ: VX-2025-0348"
+                  />
+                </Form.Item>
               </div>
 
               <div className="observation-section">
