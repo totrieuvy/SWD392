@@ -1,39 +1,294 @@
-import React, { useEffect, useState } from "react";
-import { Form, Card, Row, Col, Checkbox, Collapse } from "antd";
+import { useEffect, useState } from "react";
+import {
+  Form,
+  Card,
+  Row,
+  Col,
+  Checkbox,
+  Collapse,
+  DatePicker,
+  Button,
+  Modal,
+  Table,
+  message,
+  Tag,
+  List,
+  Spin,
+} from "antd";
+import { useDispatch, useSelector } from "react-redux";
 import api from "../../../../config/axios";
+import {
+  selectPackage,
+  replaceVaccine,
+  setVaccinationDate,
+  resetPackageSelection,
+} from "../../../../redux/features/selectedPackageSlice";
+import dayjs from "dayjs";
+import "./VaccinationPackageSection.scss";
 
 const { Panel } = Collapse;
 
 const VaccinationPackageSection = () => {
-  const [selectedVaccines, setSelectedVaccines] = useState([]);
+  const dispatch = useDispatch();
+  const selectedPackage = useSelector((state) => state.selectedPackage);
+  const selectedVaccinatedChild = useSelector((state) => state.selectedVaccinatedChild.selectedChild);
+  const user = useSelector((state) => state.user);
+
   const [packages, setPackages] = useState([]);
+  const [allVaccines, setAllVaccines] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [vaccineModalVisible, setVaccineModalVisible] = useState(false);
+  const [currentVaccine, setCurrentVaccine] = useState(null);
+  const [alternativeVaccines, setAlternativeVaccines] = useState([]);
+  const [temporarySchedules, setTemporarySchedules] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+
+  // Lấy thông tin chi tiết của trẻ
+  const childId = selectedVaccinatedChild?.childId || "";
+  const childName = selectedVaccinatedChild?.fullName || "";
+  const childDob = selectedVaccinatedChild?.dob || "";
+  const childGender = selectedVaccinatedChild?.gender || "";
+  const childAddress = selectedVaccinatedChild?.address || "";
+  const childAge = childDob ? calculateChildAge(childDob) : null;
+
+  // Lấy ID người dùng
+  const userId = user?.userId || "";
+
+  // Tính tuổi của trẻ theo tháng
+  function calculateChildAge(dobString) {
+    if (!dobString) return null;
+    const dob = dayjs(dobString);
+    return dayjs().diff(dob, "month");
+  }
 
   useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const response = await api.get("v1/package");
-        if (response.data && response.data.data) {
-          // Chỉ lấy các package có minAge và maxAge không null và nằm trong khoảng 0 - 8
-          const validPackages = response.data.data.filter(
-            (pkg) => pkg.minAge !== null && pkg.maxAge !== null && pkg.minAge >= 0 && pkg.maxAge <= 8
-          );
-          setPackages(validPackages);
-        }
-      } catch (error) {
-        console.error("Error fetching packages:", error);
-      }
-    };
-
     fetchPackages();
+    fetchAllVaccines();
   }, []);
 
-  const handleCheckboxChange = (vaccineId) => {
-    setSelectedVaccines((prev) =>
-      prev.includes(vaccineId) ? prev.filter((id) => id !== vaccineId) : [...prev, vaccineId]
-    );
+  // Đặt lại lựa chọn gói khi thay đổi trẻ
+  useEffect(() => {
+    if (childId) {
+      dispatch(resetPackageSelection());
+      setTemporarySchedules([]);
+    }
+  }, [childId, dispatch]);
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("v1/package");
+      if (response.data && response.data.data) {
+        const validPackages = response.data.data.filter(
+          (pkg) => pkg.minAge !== null && pkg.maxAge !== null && pkg.minAge >= 0 && pkg.maxAge <= 96
+        );
+        setPackages(validPackages);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải gói tiêm chủng:", error);
+      message.error("Không thể tải gói tiêm chủng");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Nhóm các package theo khoảng tuổi (ví dụ "0 - 1", "1 - 2", …)
+  const fetchAllVaccines = async () => {
+    try {
+      const response = await api.get("v1/vaccine/all");
+      if (response.data && response.data.data) {
+        setAllVaccines(response.data.data);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải tất cả vắc-xin:", error);
+      message.error("Không thể tải các lựa chọn vắc-xin thay thế");
+    }
+  };
+
+  const handlePackageSelect = (pkg) => {
+    // Chỉ cho phép chọn một gói tại một thời điểm
+    if (selectedPackage.packageId === pkg.packageId) {
+      dispatch(resetPackageSelection());
+    } else {
+      dispatch(
+        selectPackage({
+          packageId: pkg.packageId,
+          packageName: pkg.packageName,
+          price: pkg.price,
+          vaccines: pkg.vaccines || [],
+        })
+      );
+      setTemporarySchedules([]);
+    }
+  };
+
+  const openVaccineAlternatives = (vaccine) => {
+    setCurrentVaccine(vaccine);
+
+    // Tìm các vắc-xin thay thế có cùng tên
+    const alternatives = allVaccines.filter(
+      (v) => v.vaccineName === vaccine.vaccineName && v.vaccineId !== vaccine.vaccineId
+    );
+
+    setAlternativeVaccines(alternatives);
+    setVaccineModalVisible(true);
+  };
+
+  const handleVaccineReplace = (newVaccine) => {
+    if (currentVaccine) {
+      dispatch(
+        replaceVaccine({
+          originalVaccineId: currentVaccine.vaccineId,
+          newVaccine: newVaccine,
+        })
+      );
+
+      message.success(
+        `Đã thay thế vắc-xin bằng phiên bản ${newVaccine.manufacturer.name} (${newVaccine.manufacturer.countryCode})`
+      );
+      setVaccineModalVisible(false);
+      // Xóa lịch tạm thời khi thay đổi lựa chọn
+      setTemporarySchedules([]);
+    }
+  };
+
+  const handleDateChange = async (date) => {
+    const formattedDate = date ? date.format("YYYY-MM-DD") : null;
+    dispatch(setVaccinationDate(formattedDate));
+
+    // Xóa lịch tạm thời nếu ngày bị xóa
+    if (!formattedDate) {
+      setTemporarySchedules([]);
+      return;
+    }
+
+    // Kiểm tra xem đã chọn gói tiêm chủng chưa
+    if (!selectedPackage.packageId) {
+      message.warning("Vui lòng chọn gói tiêm chủng trước");
+      return;
+    }
+
+    await fetchTemporarySchedules(formattedDate);
+  };
+
+  const fetchTemporarySchedules = async (date) => {
+    if (!childId || !selectedPackage.packageId || !date) {
+      return;
+    }
+
+    try {
+      setScheduleLoading(true);
+
+      // Lấy tất cả vaccineIds từ gói đã chọn
+      const vaccineIds = selectedPackage.selectedVaccines.map((vaccine) => vaccine.vaccineId);
+
+      // Tạo payload yêu cầu
+      const scheduleRequest = {
+        vaccineIds: vaccineIds,
+        childId: childId,
+        startDate: date,
+      };
+
+      // Gọi API để lấy lịch tạm thời
+      const response = await api.post("schedule", [scheduleRequest]);
+
+      if (response.data && response.data.code === "Success") {
+        setTemporarySchedules(response.data.data || []);
+        message.success("Đã tạo xem trước lịch tiêm chủng");
+      } else {
+        message.error("Không thể tạo xem trước lịch tiêm chủng");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải lịch tạm thời:", error);
+      message.error(error.response?.data?.message || "Đã xảy ra lỗi khi tải lịch tiêm chủng tạm thời");
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  const formatDateForAPI = (dateString) => {
+    if (!dateString) return "";
+    // Chuyển từ YYYY-MM-DD sang DD-MM-YYYY
+    const date = dayjs(dateString);
+    return date.format("DD-MM-YYYY");
+  };
+
+  const handleSubmitVaccination = () => {
+    if (!childId || !selectedPackage.packageId || !selectedPackage.vaccinationDate) {
+      message.warning("Vui lòng chọn gói tiêm chủng và ngày tiêm trước");
+      return;
+    }
+
+    // Hiển thị modal xác nhận
+    setConfirmModalVisible(true);
+  };
+
+  const confirmVaccination = async () => {
+    try {
+      setLoading(true);
+
+      // Lấy tất cả vaccineIds từ gói đã chọn
+      const vaccineIds = selectedPackage.selectedVaccines.map((vaccine) => vaccine.vaccineId);
+
+      // Định dạng ngày là DD-MM-YYYY cho API đặt hàng
+      const formattedInjectionDate = formatDateForAPI(selectedPackage.vaccinationDate);
+
+      // Tạo payload đơn hàng
+      const orderPayload = {
+        userId: userId,
+        childId: childId,
+        fullName: childName,
+        dob: childDob,
+        gender: childGender,
+        address: childAddress,
+        injectionDate: formattedInjectionDate,
+        amount: calculateTotalPrice(),
+        vaccineIdList: vaccineIds,
+      };
+
+      // Gọi API đơn hàng
+      const orderResponse = await api.post("order", orderPayload);
+
+      if (orderResponse.data && orderResponse.data.code === "Success") {
+        message.success("Đã tạo đơn hàng tiêm chủng thành công");
+
+        // Xử lý chuyển hướng đến URL thanh toán nếu được cung cấp trong phản hồi
+        if (orderResponse.data.data) {
+          // Chuyển hướng đến URL thanh toán
+          window.location.href = orderResponse.data.data;
+          return;
+        }
+
+        // Nếu không có URL thanh toán, tạo lịch như trước
+        const scheduleRequest = {
+          vaccineIds: vaccineIds,
+          childId: childId,
+          startDate: selectedPackage.vaccinationDate, // Giữ định dạng gốc cho API lịch
+        };
+
+        const scheduleResponse = await api.post("schedule", [scheduleRequest]);
+
+        if (scheduleResponse.data && scheduleResponse.data.code === "Success") {
+          message.success("Đã tạo lịch tiêm chủng thành công");
+          // Đặt lại lựa chọn gói sau khi gửi thành công
+          dispatch(resetPackageSelection());
+          setTemporarySchedules([]);
+        } else {
+          message.error("Không thể lên lịch tiêm chủng");
+        }
+      } else {
+        message.error("Không thể tạo đơn hàng tiêm chủng");
+      }
+    } catch (error) {
+      console.error("Lỗi khi xử lý yêu cầu tiêm chủng:", error);
+      message.error(error.response?.data?.message || "Đã xảy ra lỗi khi xử lý yêu cầu của bạn");
+    } finally {
+      setLoading(false);
+      setConfirmModalVisible(false);
+    }
+  };
+
+  // Nhóm các gói theo phạm vi độ tuổi
   const groupPackagesByAge = () => {
     return packages.reduce((groups, pkg) => {
       if (pkg.minAge === null || pkg.maxAge === null) return groups;
@@ -46,85 +301,350 @@ const VaccinationPackageSection = () => {
     }, {});
   };
 
-  const packageGroups = groupPackagesByAge();
+  // Sắp xếp nhóm gói theo minAge
+  const sortedPackageGroups = () => {
+    const packageGroups = groupPackagesByAge();
+    return Object.entries(packageGroups).sort((a, b) => {
+      const minAgeA = parseInt(a[0].split("-")[0].trim(), 10);
+      const minAgeB = parseInt(b[0].split("-")[0].trim(), 10);
+      return minAgeA - minAgeB;
+    });
+  };
 
-  // Sắp xếp các nhóm theo minAge tăng dần
-  const sortedPackageGroups = Object.entries(packageGroups).sort((a, b) => {
-    const minAgeA = parseInt(a[0].split("-")[0].trim(), 10);
-    const minAgeB = parseInt(b[0].split("-")[0].trim(), 10);
-    return minAgeA - minAgeB;
-  });
+  // Tính tổng giá dựa trên gói đã chọn và bất kỳ vắc-xin thay thế nào
+  const calculateTotalPrice = () => {
+    if (!selectedPackage.packageId) return 0;
 
-  // Tính tổng tiền từ các vaccine được chọn
-  const calculateTotal = () => {
-    // Lấy tất cả các vaccine từ tất cả các package
-    const allVaccines = packages.flatMap((pkg) => pkg.vaccines || []);
-    const total = allVaccines
-      .filter((vaccine) => selectedVaccines.includes(vaccine.vaccineId))
-      .reduce((sum, vaccine) => sum + vaccine.price, 0);
+    // Bắt đầu với giá gói
+    let total = selectedPackage.packagePrice;
 
+    // Thêm hoặc trừ chênh lệch giá cho vắc-xin thay thế
+    Object.entries(selectedPackage.replacedVaccines).forEach(([originalId, newId]) => {
+      const originalVaccine = packages.flatMap((pkg) => pkg.vaccines || []).find((v) => v.vaccineId === originalId);
+
+      const newVaccine = selectedPackage.selectedVaccines.find((v) => v.vaccineId === newId);
+
+      if (originalVaccine && newVaccine) {
+        // Thêm chênh lệch giữa giá vắc-xin mới và gốc
+        total += newVaccine.price - originalVaccine.price;
+      }
+    });
+
+    return total;
+  };
+
+  // Định dạng giá để hiển thị
+  const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
       maximumFractionDigits: 0,
-    }).format(total);
+    }).format(price);
+  };
+
+  // Kiểm tra xem một gói có phù hợp với độ tuổi của trẻ không
+  const isPackageAppropriateForChild = (pkg) => {
+    if (childAge === null) return false;
+    return childAge >= pkg.minAge && childAge <= pkg.maxAge;
+  };
+
+  // Chuyển đổi tháng sang chuỗi hiển thị
+  const formatMonthRange = (minMonth, maxMonth) => {
+    if (minMonth === 0 && maxMonth === 0) {
+      return "Sơ sinh";
+    }
+
+    let result = "";
+
+    if (minMonth === 0) {
+      result = "Sơ sinh";
+    } else {
+      result = `${minMonth} tháng`;
+    }
+
+    result += " - " + `${maxMonth} tháng`;
+
+    return result;
+  };
+
+  // Hiển thị chi tiết gói đã chọn
+  const renderSelectedPackageDetails = () => {
+    if (!selectedPackage.packageId) {
+      return (
+        <div className="empty-selection">
+          <p>Chưa chọn gói. Vui lòng chọn một gói tiêm chủng.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="selected-package">
+        <h3 className="text-lg font-bold mb-3">{selectedPackage.packageName}</h3>
+
+        {childName && <div className="mb-2">Trẻ: {childName}</div>}
+        {childAge !== null && (
+          <div className="mb-2">
+            Tuổi: {childAge} tháng ({(childAge / 12).toFixed(1)} năm)
+          </div>
+        )}
+
+        <h4 className="text-md font-medium mt-4 mb-2">Vắc-xin đã chọn:</h4>
+        <div className="selected-vaccines-list">
+          {selectedPackage.selectedVaccines.map((vaccine) => (
+            <div
+              key={vaccine.vaccineId}
+              className="vaccine-item p-3 border rounded mb-2 flex justify-between items-center"
+            >
+              <div>
+                <div className="vaccine-name font-medium">{vaccine.vaccineName}</div>
+                <div className="vaccine-origin text-sm text-gray-600">
+                  {vaccine.manufacturer?.name} ({vaccine.manufacturer?.countryCode})
+                </div>
+                <div className="vaccine-price text-blue-600">{formatPrice(vaccine.price)}</div>
+              </div>
+              <Button type="primary" size="small" onClick={() => openVaccineAlternatives(vaccine)}>
+                Đổi phiên bản
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        <div className="date-selection mt-4 mb-4">
+          <label className="block mb-2">Ngày tiêm chủng:</label>
+          <DatePicker
+            className="w-full"
+            onChange={handleDateChange}
+            value={selectedPackage.vaccinationDate ? dayjs(selectedPackage.vaccinationDate) : null}
+            placeholder="Chọn ngày tiêm chủng"
+            disabled={scheduleLoading}
+          />
+          {scheduleLoading && <div className="mt-2 text-gray-600">Đang tải xem trước lịch...</div>}
+        </div>
+
+        <div className="total-price flex justify-between items-center p-3 bg-gray-100 rounded mb-4">
+          <span className="font-bold">Tổng cộng:</span>
+          <span className="text-blue-600 font-bold">{formatPrice(calculateTotalPrice())}</span>
+        </div>
+
+        <Button
+          type="primary"
+          className="w-full"
+          onClick={handleSubmitVaccination}
+          disabled={!selectedPackage.vaccinationDate || loading}
+        >
+          {loading ? "Đang xử lý..." : "Đăng ký tiêm chủng"}
+        </Button>
+      </div>
+    );
+  };
+
+  // Hiển thị lịch tiêm chủng tạm thời
+  const renderTemporarySchedules = () => {
+    if (temporarySchedules.length === 0) return null;
+
+    // Nhóm lịch tạm thời theo loại vắc-xin
+    const groupedByType = temporarySchedules.reduce((acc, schedule) => {
+      if (!acc[schedule.vaccineType]) {
+        acc[schedule.vaccineType] = [];
+      }
+      acc[schedule.vaccineType].push(schedule);
+      return acc;
+    }, {});
+
+    return (
+      <div className="temporary-schedules mt-4 border rounded p-4">
+        <h3 className="text-lg font-bold mb-3">Lịch tiêm chủng dự kiến</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Đây là xem trước lịch tiêm chủng của bạn. Nhấp Đăng ký tiêm chủng để xác nhận.
+        </p>
+
+        {Object.entries(groupedByType).map(([vaccineType, schedules]) => (
+          <div key={vaccineType} className="vaccine-type-group mb-4">
+            <h4 className="font-medium mb-2">{vaccineType}</h4>
+            <List
+              bordered
+              dataSource={schedules}
+              renderItem={(item) => (
+                <List.Item className="flex justify-between">
+                  <div>{dayjs(item.scheduleDate).format("DD/MM/YYYY")}</div>
+                  <Tag color="blue">Xem trước</Tag>
+                </List.Item>
+              )}
+            />
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
     <>
-      <Form.Item label="Vaccination Package" className="mt-4">
-        <Collapse>
-          {sortedPackageGroups.map(([ageRange, packagesInGroup]) => (
-            <Panel header={`Package for ${ageRange} years`} key={ageRange}>
-              {packagesInGroup.map((pkg) => (
-                <Card
-                  key={pkg.packageId}
-                  className="w-full mb-4"
-                  title={pkg.packageName}
-                  extra={<span>{new Intl.NumberFormat("vi-VN").format(pkg.price)} đ</span>}
-                >
-                  <p>{pkg.description}</p>
-                  {pkg.vaccines && pkg.vaccines.length > 0 ? (
-                    <Row gutter={[16, 16]}>
-                      {pkg.vaccines.map((vaccine) => (
-                        <Col xs={24} sm={12} md={8} lg={8} key={vaccine.vaccineId}>
+      <div className="vaccination-package-section">
+        <Row gutter={24}>
+          <Col xs={24} md={16}>
+            <Form.Item label="Gói tiêm chủng" className="mt-4">
+              {loading ? (
+                <div className="loading-state">
+                  <Spin /> Đang tải gói tiêm chủng...
+                </div>
+              ) : (
+                <Collapse>
+                  {sortedPackageGroups().map(([ageRange, packagesInGroup]) => {
+                    const minMonth = parseInt(ageRange.split(" - ")[0].trim(), 10);
+                    const maxMonth = parseInt(ageRange.split(" - ")[1].trim(), 10);
+                    return (
+                      <Panel
+                        header={
+                          <div className="flex items-center">
+                            <span>Gói cho {formatMonthRange(minMonth, maxMonth)}</span>
+                            {childAge !== null && childAge >= minMonth && childAge <= maxMonth && (
+                              <Tag color="green" className="ml-2">
+                                Khuyến nghị cho con bạn
+                              </Tag>
+                            )}
+                          </div>
+                        }
+                        key={ageRange}
+                      >
+                        {packagesInGroup.map((pkg) => (
                           <Card
-                            className="w-full cursor-pointer hover:shadow-md transition-shadow"
-                            style={{ marginBottom: "16px" }}
-                          >
-                            <Checkbox
-                              className="w-full"
-                              checked={selectedVaccines.includes(vaccine.vaccineId)}
-                              onChange={() => handleCheckboxChange(vaccine.vaccineId)}
-                            >
-                              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                                <div className="flex-1">
-                                  <div className="text-base font-medium">{vaccine.vaccineName}</div>
-                                  <div className="text-gray-500 text-sm mt-1">{vaccine.description.info}</div>
-                                </div>
-                                <div className="text-blue-600 font-medium text-right mt-2 md:mt-0">
-                                  {new Intl.NumberFormat("vi-VN").format(vaccine.price)} đ
-                                </div>
+                            key={pkg.packageId}
+                            className={`w-full mb-4 ${
+                              selectedPackage.packageId === pkg.packageId ? "border-primary border-2" : ""
+                            } ${isPackageAppropriateForChild(pkg) ? "bg-blue-50" : ""}`}
+                            title={
+                              <div className="flex justify-between items-center">
+                                <span>{pkg.packageName}</span>
+                                <Checkbox
+                                  checked={selectedPackage.packageId === pkg.packageId}
+                                  onChange={() => handlePackageSelect(pkg)}
+                                />
                               </div>
-                            </Checkbox>
+                            }
+                            extra={<span>{formatPrice(pkg.price)}</span>}
+                          >
+                            <p>{pkg.description}</p>
+                            {pkg.vaccines && pkg.vaccines.length > 0 ? (
+                              <Row gutter={[16, 16]}>
+                                {pkg.vaccines.map((vaccine) => (
+                                  <Col xs={24} sm={12} md={8} lg={8} key={vaccine.vaccineId}>
+                                    <Card className="w-full">
+                                      <div className="font-medium">{vaccine.vaccineName}</div>
+                                      <div className="text-gray-500 text-sm">{vaccine.description?.info}</div>
+                                      <div className="text-blue-600 mt-2">{formatPrice(vaccine.price)}</div>
+                                    </Card>
+                                  </Col>
+                                ))}
+                              </Row>
+                            ) : (
+                              <p>Không có vắc-xin</p>
+                            )}
                           </Card>
-                        </Col>
-                      ))}
-                    </Row>
-                  ) : (
-                    <p>No vaccines available</p>
-                  )}
-                </Card>
-              ))}
-            </Panel>
-          ))}
-        </Collapse>
-      </Form.Item>
+                        ))}
+                      </Panel>
+                    );
+                  })}
+                </Collapse>
+              )}
+            </Form.Item>
+          </Col>
 
-      <div className="flex justify-end items-center mt-4 text-lg">
-        <span className="font-bold mr-4">Total: </span>
-        <span className="text-blue-600 font-bold">{calculateTotal()}</span>
+          <Col xs={24} md={8}>
+            {renderSelectedPackageDetails()}
+            {renderTemporarySchedules()}
+          </Col>
+        </Row>
       </div>
+
+      {/* Modal cho việc chọn vắc-xin thay thế */}
+      <Modal
+        title="Chọn vắc-xin thay thế"
+        open={vaccineModalVisible}
+        onCancel={() => setVaccineModalVisible(false)}
+        footer={null}
+        width={700}
+      >
+        {currentVaccine && (
+          <div className="current-vaccine-info mb-4 p-3 bg-gray-50 rounded">
+            <h4 className="font-medium">Vắc-xin hiện tại:</h4>
+            <div>{currentVaccine.vaccineName}</div>
+            <div className="text-sm">
+              {currentVaccine.manufacturer?.name} ({currentVaccine.manufacturer?.countryCode})
+            </div>
+            <div className="text-blue-600">{formatPrice(currentVaccine.price)}</div>
+          </div>
+        )}
+
+        {alternativeVaccines.length === 0 ? (
+          <div className="text-center p-4">
+            <p>Không tìm thấy vắc-xin thay thế có cùng tên.</p>
+          </div>
+        ) : (
+          <Table
+            dataSource={alternativeVaccines}
+            rowKey="vaccineId"
+            pagination={false}
+            columns={[
+              {
+                title: "Vắc-xin",
+                dataIndex: "vaccineName",
+                key: "vaccineName",
+              },
+              {
+                title: "Nhà sản xuất",
+                dataIndex: ["manufacturer", "name"],
+                key: "manufacturer",
+                render: (text, record) => (
+                  <span>
+                    {text} ({record.manufacturer?.countryCode})
+                  </span>
+                ),
+              },
+              {
+                title: "Giá",
+                dataIndex: "price",
+                key: "price",
+                render: (price) => formatPrice(price),
+              },
+              {
+                title: "Hành động",
+                key: "action",
+                render: (_, record) => (
+                  <Button type="primary" onClick={() => handleVaccineReplace(record)}>
+                    Chọn
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        )}
+      </Modal>
+
+      {/* Modal xác nhận */}
+      <Modal
+        title="Xác nhận tiêm chủng"
+        open={confirmModalVisible}
+        onOk={confirmVaccination}
+        onCancel={() => setConfirmModalVisible(false)}
+        confirmLoading={loading}
+      >
+        <p>Bạn có chắc chắn muốn đăng ký gói tiêm chủng này không?</p>
+        <div className="mt-3">
+          <div>
+            <strong>Gói:</strong> {selectedPackage.packageName}
+          </div>
+          <div>
+            <strong>Trẻ:</strong> {childName}
+          </div>
+          <div>
+            <strong>Ngày:</strong>{" "}
+            {selectedPackage.vaccinationDate && dayjs(selectedPackage.vaccinationDate).format("DD/MM/YYYY")}
+          </div>
+          <div>
+            <strong>Tổng số tiền:</strong> {formatPrice(calculateTotalPrice())}
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

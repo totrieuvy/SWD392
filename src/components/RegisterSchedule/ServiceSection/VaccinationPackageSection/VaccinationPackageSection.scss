@@ -1,0 +1,398 @@
+// Main variables
+$primary-color: #1890ff;
+$primary-light: #e6f7ff;
+$success-color: #52c41a;
+$warning-color: #faad14;
+$error-color: #f5222d;
+$text-color: #333333;
+$text-secondary: #666666;
+$text-light: #999999;
+$border-color: #e8e8e8;
+$hover-color: #f5f5f5;
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+$border-radius: 6px;
+$spacing-unit: 8px;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin card-hover {
+  transition: all 0.3s ease;
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+}
+
+// Main component styles
+.vaccination-package-section {
+  padding: $spacing-unit * 2 0;
+
+  .ant-collapse {
+    background-color: white;
+    border-radius: $border-radius;
+    overflow: hidden;
+    box-shadow: $shadow-sm;
+
+    .ant-collapse-header {
+      padding: $spacing-unit * 2;
+      font-weight: 600;
+
+      &:hover {
+        background-color: $hover-color;
+      }
+    }
+
+    .ant-collapse-content-box {
+      padding: $spacing-unit * 2;
+    }
+  }
+
+  .ant-card {
+    @include card-hover;
+    margin-bottom: $spacing-unit * 2;
+    border-radius: $border-radius;
+    overflow: hidden;
+
+    &.border-primary {
+      border-color: $primary-color;
+      transition: all 0.3s ease;
+
+      &::after {
+        content: "✓ Selected";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: $primary-color;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+      }
+    }
+
+    &.bg-blue-50 {
+      background-color: $primary-light;
+    }
+
+    .ant-card-head {
+      border-bottom: 1px solid $border-color;
+      background-color: #fafafa;
+    }
+
+    .ant-checkbox {
+      transform: scale(1.2);
+    }
+  }
+
+  // Recommendation tag
+  .ant-tag-green {
+    background-color: #f6ffed;
+    border-color: #b7eb8f;
+    color: $success-color;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 2px 8px;
+    margin-left: $spacing-unit;
+  }
+
+  // Vaccine cards within packages
+  .ant-card .ant-card {
+    margin-top: $spacing-unit;
+    box-shadow: none;
+    border: 1px solid $border-color;
+
+    &:hover {
+      border-color: $primary-color;
+      transform: none;
+    }
+  }
+}
+
+// Selected package section
+.selected-package {
+  padding: $spacing-unit * 2;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background-color: white;
+  box-shadow: $shadow-sm;
+
+  h3 {
+    color: $text-color;
+    border-bottom: 1px solid $border-color;
+    padding-bottom: $spacing-unit;
+    margin-bottom: $spacing-unit * 2;
+    font-weight: 600;
+  }
+
+  h4 {
+    font-weight: 600;
+    margin: $spacing-unit * 2 0 $spacing-unit 0;
+  }
+
+  .vaccine-item {
+    background-color: white;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    padding: $spacing-unit * 1.5;
+    margin-bottom: $spacing-unit;
+    @include flex-between;
+
+    &:hover {
+      background-color: $hover-color;
+    }
+
+    .vaccine-name {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .vaccine-origin {
+      color: $text-secondary;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .vaccine-price {
+      color: $primary-color;
+      font-weight: 600;
+    }
+
+    .ant-btn {
+      background-color: transparent;
+      color: $primary-color;
+      border-color: $primary-color;
+
+      &:hover {
+        background-color: $primary-light;
+      }
+    }
+  }
+
+  .date-selection {
+    margin: $spacing-unit * 2 0;
+
+    label {
+      font-weight: 600;
+      margin-bottom: $spacing-unit;
+      display: block;
+    }
+
+    .ant-picker {
+      width: 100%;
+      height: 40px;
+      border-radius: $border-radius;
+    }
+  }
+
+  .total-price {
+    background-color: $primary-light;
+    border-radius: $border-radius;
+    padding: $spacing-unit * 1.5;
+    margin: $spacing-unit * 2 0;
+    @include flex-between;
+    font-size: 16px;
+
+    span:last-child {
+      color: $primary-color;
+      font-weight: 700;
+      font-size: 18px;
+    }
+  }
+
+  .ant-btn-primary {
+    height: 44px;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: $border-radius;
+    margin-top: $spacing-unit;
+  }
+}
+
+// Empty selection state
+.empty-selection {
+  padding: $spacing-unit * 3;
+  text-align: center;
+  border: 1px dashed $border-color;
+  border-radius: $border-radius;
+  color: $text-light;
+  background-color: #fafafa;
+
+  p {
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+// Temporary schedules
+.temporary-schedules {
+  margin-top: $spacing-unit * 3;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  padding: $spacing-unit * 2;
+  background-color: white;
+  box-shadow: $shadow-sm;
+
+  h3 {
+    color: $text-color;
+    margin-bottom: $spacing-unit;
+    font-weight: 600;
+  }
+
+  .vaccine-type-group {
+    margin-bottom: $spacing-unit * 2;
+
+    h4 {
+      font-weight: 600;
+      margin-bottom: $spacing-unit;
+    }
+  }
+
+  .ant-list {
+    border-radius: $border-radius;
+    overflow: hidden;
+
+    .ant-list-item {
+      padding: $spacing-unit $spacing-unit * 2;
+      @include flex-between;
+
+      &:hover {
+        background-color: $hover-color;
+      }
+    }
+  }
+
+  .ant-tag-blue {
+    background-color: $primary-light;
+    border-color: $primary-color;
+    color: $primary-color;
+    border-radius: 12px;
+    padding: 1px 8px;
+  }
+}
+
+// Modal styles
+.ant-modal {
+  .ant-modal-header {
+    border-bottom: 1px solid $border-color;
+    padding: $spacing-unit * 2;
+  }
+
+  .ant-modal-title {
+    font-weight: 600;
+  }
+
+  .ant-modal-body {
+    padding: $spacing-unit * 2;
+  }
+
+  .current-vaccine-info {
+    background-color: $hover-color;
+    border-radius: $border-radius;
+    padding: $spacing-unit * 2;
+    margin-bottom: $spacing-unit * 2;
+
+    h4 {
+      font-weight: 600;
+      margin-bottom: $spacing-unit;
+    }
+  }
+
+  .ant-table {
+    .ant-table-thead > tr > th {
+      background-color: #fafafa;
+      font-weight: 600;
+    }
+
+    .ant-table-tbody > tr:hover > td {
+      background-color: $primary-light;
+    }
+  }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  .vaccination-package-section {
+    .ant-col {
+      margin-bottom: $spacing-unit * 2;
+    }
+  }
+
+  .selected-package {
+    .vaccine-item {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .ant-btn {
+        margin-top: $spacing-unit;
+        align-self: flex-end;
+      }
+    }
+  }
+}
+
+// Loading state
+.loading-state {
+  @include flex-center;
+  padding: $spacing-unit * 3;
+  background-color: #fafafa;
+  border-radius: $border-radius;
+  color: $text-secondary;
+
+  .ant-spin {
+    margin-right: $spacing-unit;
+  }
+}
+
+// Animation for price changes
+@keyframes highlight {
+  0% {
+    background-color: rgba($primary-color, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.total-price {
+  span:last-child {
+    transition: all 0.3s ease;
+
+    &.changed {
+      animation: highlight 1.5s ease-out;
+    }
+  }
+}
+
+// Improved form elements
+.ant-form-item-label > label {
+  font-weight: 600;
+  color: $text-color;
+}
+
+.ant-checkbox-wrapper:hover .ant-checkbox-inner,
+.ant-checkbox:hover .ant-checkbox-inner,
+.ant-checkbox-input:focus + .ant-checkbox-inner {
+  border-color: $primary-color;
+}
+
+// Hover effects for buttons
+.ant-btn {
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+  }
+}
