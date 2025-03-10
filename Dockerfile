@@ -4,29 +4,29 @@ FROM node:20 AS builder
 # Thiết lập thư mục làm việc
 WORKDIR /app
 
-# Sao chép file package.json và lock file, sau đó cài đặt dependencies
+# Sao chép file package.json và package-lock.json, sau đó cài đặt dependencies
 COPY package.json package-lock.json ./
 RUN npm install
 
 # Sao chép toàn bộ mã nguồn vào container
 COPY . .
 
-# Build ứng dụng Vite
+# Build ứng dụng Vite (sẽ tạo ra folder dist)
 RUN npm run build
 
 # ------------------------------
 # Sử dụng Nginx để phục vụ ứng dụng đã build
 FROM nginx:latest
 
-# Xóa cấu hình mặc định và thêm file cấu hình mới
+# Xóa cấu hình mặc định và copy file cấu hình Nginx mới
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Sao chép mã nguồn đã build vào thư mục Nginx phục vụ
+# Copy các file build được từ stage builder vào thư mục phục vụ của Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Mở port 80
+# Mở port 80 cho Nginx
 EXPOSE 80
 
-# Chạy Nginx
+# Chạy Nginx ở chế độ nền
 CMD ["nginx", "-g", "daemon off;"]

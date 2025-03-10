@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import api from "../../config/axios";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/userSlice";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "../../config/firebase";
 
 function Login() {
   const [form] = useForm();
@@ -54,6 +56,75 @@ function Login() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed. Please try again!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoginWithGoogle = async () => {
+    try {
+      setLoading(true);
+      const result = await signInWithPopup(auth, googleProvider);
+
+      // Get the ID token and username from the Google auth result
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const idToken = credential.idToken;
+      const username = result.user.displayName || result.user.email.split("@")[0]; // Fallback to email prefix if no display name
+
+      // Prepare request payload
+      const googleLoginData = {
+        idToken: idToken,
+        username: username,
+      };
+
+      // Make API call to your backend
+      const response = await api.post("user/google-login", googleLoginData); // Adjust endpoint as needed
+
+      // Handle successful response
+      if (response && response.data && response.data.statusCode === 200) {
+        const { token, roleName, userId, userName, email } = response.data.data;
+
+        // Show success message
+        toast.success(response.data.message);
+
+        // Store token and dispatch login action
+        localStorage.setItem("token", token);
+        dispatch(
+          login({
+            userId,
+            userName,
+            email,
+            token,
+            roleName,
+          })
+        );
+
+        // Navigate based on role
+        switch (roleName) {
+          case "user":
+            navigate("/");
+            break;
+          case "admin":
+            navigate("/admin");
+            break;
+          case "manager":
+            navigate("/manager");
+            break;
+          case "staff":
+            navigate("/staff");
+            break;
+          case "doctor":
+            navigate("/doctor");
+            break;
+          default:
+            navigate("/");
+        }
+      }
+    } catch (error) {
+      // Handle errors
+      const errorMessage = error.response?.data?.message || "Google login failed. Please try again!";
+      toast.error(errorMessage);
+      console.error("Google login error:", error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +185,7 @@ function Login() {
           <div className="Login__footer">
             <div className="Login__footer__or">Or</div>
             <div className="Login__footer__google">
-              <Button type="primary" className="Login__footer__google-button">
+              <Button type="primary" className="Login__footer__google-button" onClick={handleLoginWithGoogle}>
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
                   alt="google"

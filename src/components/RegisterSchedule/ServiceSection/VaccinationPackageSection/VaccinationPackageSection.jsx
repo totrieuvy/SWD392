@@ -44,7 +44,6 @@ const VaccinationPackageSection = () => {
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
 
-  // Lấy thông tin chi tiết của trẻ
   const childId = selectedVaccinatedChild?.childId || "";
   const childName = selectedVaccinatedChild?.fullName || "";
   const childDob = selectedVaccinatedChild?.dob || "";
@@ -52,10 +51,8 @@ const VaccinationPackageSection = () => {
   const childAddress = selectedVaccinatedChild?.address || "";
   const childAge = childDob ? calculateChildAge(childDob) : null;
 
-  // Lấy ID người dùng
   const userId = user?.userId || "";
 
-  // Tính tuổi của trẻ theo tháng
   function calculateChildAge(dobString) {
     if (!dobString) return null;
     const dob = dayjs(dobString);
@@ -67,7 +64,6 @@ const VaccinationPackageSection = () => {
     fetchAllVaccines();
   }, []);
 
-  // Đặt lại lựa chọn gói khi thay đổi trẻ
   useEffect(() => {
     if (childId) {
       dispatch(resetPackageSelection());
@@ -106,7 +102,6 @@ const VaccinationPackageSection = () => {
   };
 
   const handlePackageSelect = (pkg) => {
-    // Chỉ cho phép chọn một gói tại một thời điểm
     if (selectedPackage.packageId === pkg.packageId) {
       dispatch(resetPackageSelection());
     } else {
@@ -125,7 +120,6 @@ const VaccinationPackageSection = () => {
   const openVaccineAlternatives = (vaccine) => {
     setCurrentVaccine(vaccine);
 
-    // Tìm các vắc-xin thay thế có cùng tên
     const alternatives = allVaccines.filter(
       (v) => v.vaccineName === vaccine.vaccineName && v.vaccineId !== vaccine.vaccineId
     );
@@ -147,7 +141,6 @@ const VaccinationPackageSection = () => {
         `Đã thay thế vắc-xin bằng phiên bản ${newVaccine.manufacturer.name} (${newVaccine.manufacturer.countryCode})`
       );
       setVaccineModalVisible(false);
-      // Xóa lịch tạm thời khi thay đổi lựa chọn
       setTemporarySchedules([]);
     }
   };
@@ -156,13 +149,11 @@ const VaccinationPackageSection = () => {
     const formattedDate = date ? date.format("YYYY-MM-DD") : null;
     dispatch(setVaccinationDate(formattedDate));
 
-    // Xóa lịch tạm thời nếu ngày bị xóa
     if (!formattedDate) {
       setTemporarySchedules([]);
       return;
     }
 
-    // Kiểm tra xem đã chọn gói tiêm chủng chưa
     if (!selectedPackage.packageId) {
       message.warning("Vui lòng chọn gói tiêm chủng trước");
       return;
@@ -179,17 +170,14 @@ const VaccinationPackageSection = () => {
     try {
       setScheduleLoading(true);
 
-      // Lấy tất cả vaccineIds từ gói đã chọn
       const vaccineIds = selectedPackage.selectedVaccines.map((vaccine) => vaccine.vaccineId);
 
-      // Tạo payload yêu cầu
       const scheduleRequest = {
         vaccineIds: vaccineIds,
         childId: childId,
         startDate: date,
       };
 
-      // Gọi API để lấy lịch tạm thời
       const response = await api.post("schedule", [scheduleRequest]);
 
       if (response.data && response.data.code === "Success") {
@@ -208,7 +196,6 @@ const VaccinationPackageSection = () => {
 
   const formatDateForAPI = (dateString) => {
     if (!dateString) return "";
-    // Chuyển từ YYYY-MM-DD sang DD-MM-YYYY
     const date = dayjs(dateString);
     return date.format("DD-MM-YYYY");
   };
@@ -219,7 +206,6 @@ const VaccinationPackageSection = () => {
       return;
     }
 
-    // Hiển thị modal xác nhận
     setConfirmModalVisible(true);
   };
 
@@ -227,13 +213,10 @@ const VaccinationPackageSection = () => {
     try {
       setLoading(true);
 
-      // Lấy tất cả vaccineIds từ gói đã chọn
       const vaccineIds = selectedPackage.selectedVaccines.map((vaccine) => vaccine.vaccineId);
 
-      // Định dạng ngày là DD-MM-YYYY cho API đặt hàng
       const formattedInjectionDate = formatDateForAPI(selectedPackage.vaccinationDate);
 
-      // Tạo payload đơn hàng
       const orderPayload = {
         userId: userId,
         childId: childId,
@@ -246,31 +229,26 @@ const VaccinationPackageSection = () => {
         vaccineIdList: vaccineIds,
       };
 
-      // Gọi API đơn hàng
       const orderResponse = await api.post("order", orderPayload);
 
       if (orderResponse.data && orderResponse.data.code === "Success") {
         message.success("Đã tạo đơn hàng tiêm chủng thành công");
 
-        // Xử lý chuyển hướng đến URL thanh toán nếu được cung cấp trong phản hồi
         if (orderResponse.data.data) {
-          // Chuyển hướng đến URL thanh toán
           window.location.href = orderResponse.data.data;
           return;
         }
 
-        // Nếu không có URL thanh toán, tạo lịch như trước
         const scheduleRequest = {
           vaccineIds: vaccineIds,
           childId: childId,
-          startDate: selectedPackage.vaccinationDate, // Giữ định dạng gốc cho API lịch
+          startDate: selectedPackage.vaccinationDate,
         };
 
         const scheduleResponse = await api.post("schedule", [scheduleRequest]);
 
         if (scheduleResponse.data && scheduleResponse.data.code === "Success") {
           message.success("Đã tạo lịch tiêm chủng thành công");
-          // Đặt lại lựa chọn gói sau khi gửi thành công
           dispatch(resetPackageSelection());
           setTemporarySchedules([]);
         } else {
@@ -288,7 +266,6 @@ const VaccinationPackageSection = () => {
     }
   };
 
-  // Nhóm các gói theo phạm vi độ tuổi
   const groupPackagesByAge = () => {
     return packages.reduce((groups, pkg) => {
       if (pkg.minAge === null || pkg.maxAge === null) return groups;
@@ -301,7 +278,6 @@ const VaccinationPackageSection = () => {
     }, {});
   };
 
-  // Sắp xếp nhóm gói theo minAge
   const sortedPackageGroups = () => {
     const packageGroups = groupPackagesByAge();
     return Object.entries(packageGroups).sort((a, b) => {
@@ -311,29 +287,28 @@ const VaccinationPackageSection = () => {
     });
   };
 
-  // Tính tổng giá dựa trên gói đã chọn và bất kỳ vắc-xin thay thế nào
   const calculateTotalPrice = () => {
     if (!selectedPackage.packageId) return 0;
 
-    // Bắt đầu với giá gói
-    let total = selectedPackage.packagePrice;
+    const packageInfo = packages.find((pkg) => pkg.packageId === selectedPackage.packageId);
+    if (!packageInfo) return 0;
 
-    // Thêm hoặc trừ chênh lệch giá cho vắc-xin thay thế
-    Object.entries(selectedPackage.replacedVaccines).forEach(([originalId, newId]) => {
-      const originalVaccine = packages.flatMap((pkg) => pkg.vaccines || []).find((v) => v.vaccineId === originalId);
+    let totalVaccinePrice = 0;
 
-      const newVaccine = selectedPackage.selectedVaccines.find((v) => v.vaccineId === newId);
-
-      if (originalVaccine && newVaccine) {
-        // Thêm chênh lệch giữa giá vắc-xin mới và gốc
-        total += newVaccine.price - originalVaccine.price;
-      }
+    selectedPackage.selectedVaccines.forEach((vaccine) => {
+      totalVaccinePrice += vaccine.price;
     });
 
-    return total;
+    let discountAmount = 0;
+    if (packageInfo.discount) {
+      discountAmount = (totalVaccinePrice * packageInfo.discount) / 100;
+    }
+
+    const finalPrice = totalVaccinePrice - discountAmount;
+
+    return finalPrice > 0 ? finalPrice : 0;
   };
 
-  // Định dạng giá để hiển thị
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -342,13 +317,11 @@ const VaccinationPackageSection = () => {
     }).format(price);
   };
 
-  // Kiểm tra xem một gói có phù hợp với độ tuổi của trẻ không
   const isPackageAppropriateForChild = (pkg) => {
     if (childAge === null) return false;
     return childAge >= pkg.minAge && childAge <= pkg.maxAge;
   };
 
-  // Chuyển đổi tháng sang chuỗi hiển thị
   const formatMonthRange = (minMonth, maxMonth) => {
     if (minMonth === 0 && maxMonth === 0) {
       return "Sơ sinh";
@@ -367,7 +340,6 @@ const VaccinationPackageSection = () => {
     return result;
   };
 
-  // Hiển thị chi tiết gói đã chọn
   const renderSelectedPackageDetails = () => {
     if (!selectedPackage.packageId) {
       return (
@@ -438,11 +410,9 @@ const VaccinationPackageSection = () => {
     );
   };
 
-  // Hiển thị lịch tiêm chủng tạm thời
   const renderTemporarySchedules = () => {
     if (temporarySchedules.length === 0) return null;
 
-    // Nhóm lịch tạm thời theo loại vắc-xin
     const groupedByType = temporarySchedules.reduce((acc, schedule) => {
       if (!acc[schedule.vaccineType]) {
         acc[schedule.vaccineType] = [];
@@ -556,7 +526,6 @@ const VaccinationPackageSection = () => {
         </Row>
       </div>
 
-      {/* Modal cho việc chọn vắc-xin thay thế */}
       <Modal
         title="Chọn vắc-xin thay thế"
         open={vaccineModalVisible}
@@ -620,7 +589,6 @@ const VaccinationPackageSection = () => {
         )}
       </Modal>
 
-      {/* Modal xác nhận */}
       <Modal
         title="Xác nhận tiêm chủng"
         open={confirmModalVisible}

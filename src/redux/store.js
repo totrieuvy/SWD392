@@ -8,6 +8,7 @@ import { childrenSelectedSlice } from "./features/childrenSelectedSlice";
 import { selectedVaccinatedChildrenSlice } from "./features/selectedVaccinatedChildren";
 import { doctorSlice } from "./features/doctorSlice";
 import selectedPackageReducer from "./features/selectedPackageSlice";
+import preVaccineInfoReducer from "./features/preVaccineInfoSlice";
 
 // Cấu hình persist cho từng reducer
 const userPersistConfig = {
@@ -37,6 +38,11 @@ const selectedPackagePersistConfig = {
   storage,
 };
 
+const preVaccineInfoPersistConfig = {
+  key: "preVaccineInfo",
+  storage,
+};
+
 export const store = configureStore({
   reducer: {
     user: persistReducer(userPersistConfig, userSlice.reducer),
@@ -44,6 +50,7 @@ export const store = configureStore({
     selectedVaccinatedChild: persistReducer(vaccinatedChildPersistConfig, selectedVaccinatedChildrenSlice.reducer),
     doctor: persistReducer(doctorPersistConfig, doctorSlice.reducer),
     selectedPackage: persistReducer(selectedPackagePersistConfig, selectedPackageReducer),
+    preVaccineInfo: persistReducer(preVaccineInfoPersistConfig, preVaccineInfoReducer),
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
