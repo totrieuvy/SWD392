@@ -82,7 +82,7 @@ function Manufacture() {
                 setIsUpdate(true);
               }}
             >
-              Update
+              Cập nhật
             </Button>
             <Popconfirm
               title="Delete manufacture?"
@@ -90,7 +90,7 @@ function Manufacture() {
               onConfirm={() => handleDelete(manufacturerId)}
             >
               <Button type="primary" danger>
-                Delete
+                Xóa
               </Button>
             </Popconfirm>
           </>
