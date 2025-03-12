@@ -43,8 +43,22 @@ const VaccineSection = () => {
     document.title = "Home";
   }, [pageIndex, pageSize]); // Re-fetch when pagination changes
 
+  // Get the manufacturer from the first entry in the manufacturers array
+  const getManufacturer = (vaccine) => {
+    return vaccine.manufacturers && vaccine.manufacturers.length > 0 ? vaccine.manufacturers[0] : null;
+  };
+
   // Lấy danh sách tên nhà sản xuất duy nhất
-  const manufacturerOptions = Array.from(new Set(vaccines.map((vaccine) => vaccine.manufacturer.name)));
+  const manufacturerOptions = Array.from(
+    new Set(
+      vaccines
+        .map((vaccine) => {
+          const manufacturer = getManufacturer(vaccine);
+          return manufacturer ? manufacturer.name : null;
+        })
+        .filter(Boolean)
+    )
+  );
 
   // Lấy danh sách nhóm độ tuổi duy nhất dạng "minAge - maxAge" và sắp xếp theo minAge tăng dần
   const ageOptions = Array.from(new Set(vaccines.map((vaccine) => `${vaccine.minAge} - ${vaccine.maxAge}`))).sort(
@@ -56,9 +70,16 @@ const VaccineSection = () => {
   );
 
   // Lấy danh sách quốc gia (countryName) duy nhất và sắp xếp theo bảng chữ cái
-  const countryOptions = Array.from(new Set(vaccines.map((vaccine) => vaccine.manufacturer.countryName))).sort((a, b) =>
-    a.localeCompare(b)
-  );
+  const countryOptions = Array.from(
+    new Set(
+      vaccines
+        .map((vaccine) => {
+          const manufacturer = getManufacturer(vaccine);
+          return manufacturer ? manufacturer.countryName : null;
+        })
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
 
   // Handle filter changes
   const applyFilters = () => {
@@ -72,16 +93,17 @@ const VaccineSection = () => {
     let manufacturerMatch = true;
     let ageMatch = true;
     let countryMatch = true;
+    const manufacturer = getManufacturer(vaccine);
 
-    if (selectedManufacturer) {
-      manufacturerMatch = vaccine.manufacturer.name === selectedManufacturer;
+    if (selectedManufacturer && manufacturer) {
+      manufacturerMatch = manufacturer.name === selectedManufacturer;
     }
     if (selectedAge) {
       const ageGroup = `${vaccine.minAge} - ${vaccine.maxAge}`;
       ageMatch = ageGroup === selectedAge;
     }
-    if (selectedCountry.length > 0) {
-      countryMatch = selectedCountry.includes(vaccine.manufacturer.countryName);
+    if (selectedCountry.length > 0 && manufacturer) {
+      countryMatch = selectedCountry.includes(manufacturer.countryName);
     }
     return manufacturerMatch && ageMatch && countryMatch;
   });
@@ -195,27 +217,34 @@ const VaccineSection = () => {
           {/* Danh sách card */}
           <Col xs={24} sm={24} md={18}>
             <Row gutter={[16, 16]} justify="start">
-              {sortedVaccines.map((vaccine, index) => (
-                <Col key={index}>
-                  <Link to={`/detail/${vaccine.vaccineId}`}>
-                    <Card
-                      hoverable
-                      cover={<img alt={vaccine.vaccineName} src={vaccine.image} className="vaccine-image" />}
-                      className="vaccine-card"
-                    >
-                      <div className="vaccine-info">
-                        <h3 className="vaccine-name">{vaccine.vaccineName}</h3>
-                        <p className="vaccine-age">
-                          Độ tuổi: {vaccine.minAge} - {vaccine.maxAge} tuổi
-                        </p>
-                        <p className="vaccine-price">Giá: {vaccine.price.toLocaleString("vi-VN")} VND</p>
-                        <p className="vaccine-manufacturer">Nhà sản xuất: {vaccine.manufacturer.name}</p>
-                        <p className="vaccine-country">Quốc gia: {vaccine.manufacturer.countryName}</p>
-                      </div>
-                    </Card>
-                  </Link>
-                </Col>
-              ))}
+              {sortedVaccines.map((vaccine, index) => {
+                const manufacturer = getManufacturer(vaccine);
+                return (
+                  <Col key={index}>
+                    <Link to={`/detail/${vaccine.vaccineId}`}>
+                      <Card
+                        hoverable
+                        cover={<img alt={vaccine.vaccineName} src={vaccine.image} className="vaccine-image" />}
+                        className="vaccine-card"
+                      >
+                        <div className="vaccine-info">
+                          <h3 className="vaccine-name">{vaccine.vaccineName}</h3>
+                          <p className="vaccine-age">
+                            Độ tuổi: {vaccine.minAge} - {vaccine.maxAge} tuổi
+                          </p>
+                          <p className="vaccine-price">Giá: {vaccine.price.toLocaleString("vi-VN")} VND</p>
+                          {manufacturer && (
+                            <>
+                              <p className="vaccine-manufacturer">Nhà sản xuất: {manufacturer.name}</p>
+                              <p className="vaccine-country">Quốc gia: {manufacturer.countryName}</p>
+                            </>
+                          )}
+                        </div>
+                      </Card>
+                    </Link>
+                  </Col>
+                );
+              })}
             </Row>
             {/* Pagination controls */}
             <Row className="mt-6" justify="center">

@@ -425,7 +425,7 @@ function Vaccine() {
 
               <Form.Item
                 name="minAge"
-                label="Minimum Age"
+                label="Minimum Age (month)"
                 rules={[
                   { required: true, message: "Please enter minimum age" },
                   { type: "number", min: 0, message: "Minimum age must be greater or equal 0" },
@@ -437,11 +437,11 @@ function Vaccine() {
 
               <Form.Item
                 name="maxAge"
-                label="Maximum Age"
+                label="Maximum Age (month)"
                 rules={[
                   { required: true, message: "Please enter maximum age" },
                   { type: "number", min: 1, message: "Maximum age must be greater than 0" },
-                  { type: "number", max: 8, message: "Maximum age must be less than 9" },
+                  { type: "number", max: 12, message: "Maximum age must be less than 12" },
                 ]}
               >
                 <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter maximum age" />
@@ -457,7 +457,7 @@ function Vaccine() {
 
               <Form.Item
                 name="duration"
-                label="Duration (weeks)"
+                label="Duration (days)"
                 rules={[{ required: true, message: "Please enter duration" }]}
               >
                 <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter duration" />
