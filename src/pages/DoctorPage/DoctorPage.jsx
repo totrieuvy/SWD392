@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
-import { Steps, Table, Input, Form, Button, Checkbox, message, Modal } from "antd";
+import { Steps, Table, Input, Form, Button, Checkbox, message, Modal, Radio } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedChildByDoctor } from "../../redux/features/doctorSlice";
 import { setPreVaccineInfo, resetPreVaccineInfo } from "../../redux/features/preVaccineInfoSlice";
@@ -49,6 +50,7 @@ const DoctorPage = () => {
     fatigue: false,
     headache: false,
     nausea: false,
+    noReaction: false,
     otherReactions: "",
     severityLevel: "nhẹ",
     notes: "",
@@ -149,15 +151,17 @@ const DoctorPage = () => {
     try {
       const response = await api.post("vaccinereaction", {
         scheduleId: selectedChild.scheduleId,
-        reactions: [
-          postVaccineInfo.localReaction && "localReaction",
-          postVaccineInfo.fever && "fever",
-          postVaccineInfo.muscleAche && "muscleAche",
-          postVaccineInfo.fatigue && "fatigue",
-          postVaccineInfo.headache && "headache",
-          postVaccineInfo.nausea && "nausea",
-        ].filter(Boolean),
-        otherReactions: postVaccineInfo.otherReactions,
+        reactions: postVaccineInfo.noReaction
+          ? ["noReaction"]
+          : [
+              postVaccineInfo.localReaction && "localReaction",
+              postVaccineInfo.fever && "fever",
+              postVaccineInfo.muscleAche && "muscleAche",
+              postVaccineInfo.fatigue && "fatigue",
+              postVaccineInfo.headache && "headache",
+              postVaccineInfo.nausea && "nausea",
+            ].filter(Boolean),
+        otherReactions: postVaccineInfo.otherReactions || "", // Đảm bảo gửi otherReactions
         severity: postVaccineInfo.severityLevel,
         notes: postVaccineInfo.notes,
       });
@@ -183,7 +187,7 @@ const DoctorPage = () => {
         await form.validateFields();
         let chronicDiseases = [];
         if (medicalInfo.noChronic) {
-          chronicDiseases = ["noChronic"]; // Add a specific value for "no chronic diseases"
+          chronicDiseases = ["noChronic"];
         } else {
           chronicDiseases = [
             medicalInfo.heartDisease && "heartDisease",
@@ -250,6 +254,7 @@ const DoctorPage = () => {
       fatigue: false,
       headache: false,
       nausea: false,
+      noReaction: false,
       otherReactions: "",
       severityLevel: "nhẹ",
       notes: "",
@@ -558,54 +563,81 @@ const DoctorPage = () => {
                 <h3>Ghi nhận phản ứng sau tiêm</h3>
                 <Form form={postVaccineForm} layout="vertical" className="post-vaccine-form">
                   <div className="reactions-section">
-                    <Form.Item name="localReaction">
+                    <Form.Item name="noReaction">
                       <Checkbox
-                        checked={postVaccineInfo.localReaction}
-                        onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, localReaction: e.target.checked })}
+                        checked={postVaccineInfo.noReaction}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          setPostVaccineInfo({
+                            ...postVaccineInfo,
+                            noReaction: isChecked,
+                            localReaction: !isChecked,
+                            fever: !isChecked,
+                            muscleAche: !isChecked,
+                            fatigue: !isChecked,
+                            headache: !isChecked,
+                            nausea: !isChecked,
+                            otherReactions: isChecked ? "" : postVaccineInfo.otherReactions,
+                          });
+                        }}
                       >
-                        Phản ứng tại chỗ (đau, sưng, đỏ)
+                        Không có phản ứng
                       </Checkbox>
                     </Form.Item>
-                    <Form.Item name="fever">
-                      <Checkbox
-                        checked={postVaccineInfo.fever}
-                        onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, fever: e.target.checked })}
-                      >
-                        Sốt
-                      </Checkbox>
-                    </Form.Item>
-                    <Form.Item name="muscleAche">
-                      <Checkbox
-                        checked={postVaccineInfo.muscleAche}
-                        onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, muscleAche: e.target.checked })}
-                      >
-                        Đau cơ
-                      </Checkbox>
-                    </Form.Item>
-                    <Form.Item name="fatigue">
-                      <Checkbox
-                        checked={postVaccineInfo.fatigue}
-                        onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, fatigue: e.target.checked })}
-                      >
-                        Mệt mỏi
-                      </Checkbox>
-                    </Form.Item>
-                    <Form.Item name="headache">
-                      <Checkbox
-                        checked={postVaccineInfo.headache}
-                        onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, headache: e.target.checked })}
-                      >
-                        Đau đầu
-                      </Checkbox>
-                    </Form.Item>
-                    <Form.Item name="nausea">
-                      <Checkbox
-                        checked={postVaccineInfo.nausea}
-                        onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, nausea: e.target.checked })}
-                      >
-                        Buồn nôn
-                      </Checkbox>
-                    </Form.Item>
+                    {!postVaccineInfo.noReaction && (
+                      <>
+                        <Form.Item name="localReaction">
+                          <Checkbox
+                            checked={postVaccineInfo.localReaction}
+                            onChange={(e) =>
+                              setPostVaccineInfo({ ...postVaccineInfo, localReaction: e.target.checked })
+                            }
+                          >
+                            Phản ứng tại chỗ (đau, sưng, đỏ)
+                          </Checkbox>
+                        </Form.Item>
+                        <Form.Item name="fever">
+                          <Checkbox
+                            checked={postVaccineInfo.fever}
+                            onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, fever: e.target.checked })}
+                          >
+                            Sốt
+                          </Checkbox>
+                        </Form.Item>
+                        <Form.Item name="muscleAche">
+                          <Checkbox
+                            checked={postVaccineInfo.muscleAche}
+                            onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, muscleAche: e.target.checked })}
+                          >
+                            Đau cơ
+                          </Checkbox>
+                        </Form.Item>
+                        <Form.Item name="fatigue">
+                          <Checkbox
+                            checked={postVaccineInfo.fatigue}
+                            onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, fatigue: e.target.checked })}
+                          >
+                            Mệt mỏi
+                          </Checkbox>
+                        </Form.Item>
+                        <Form.Item name="headache">
+                          <Checkbox
+                            checked={postVaccineInfo.headache}
+                            onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, headache: e.target.checked })}
+                          >
+                            Đau đầu
+                          </Checkbox>
+                        </Form.Item>
+                        <Form.Item name="nausea">
+                          <Checkbox
+                            checked={postVaccineInfo.nausea}
+                            onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, nausea: e.target.checked })}
+                          >
+                            Buồn nôn
+                          </Checkbox>
+                        </Form.Item>
+                      </>
+                    )}
                   </div>
 
                   <Form.Item name="otherReactions" label="Phản ứng khác">
@@ -613,6 +645,8 @@ const DoctorPage = () => {
                       value={postVaccineInfo.otherReactions}
                       onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, otherReactions: e.target.value })}
                       rows={2}
+                      disabled={postVaccineInfo.noReaction} // Vô hiệu hóa nếu chọn "Không có phản ứng"
+                      placeholder={postVaccineInfo.noReaction ? "Không có phản ứng" : "Nhập phản ứng khác (nếu có)"}
                     />
                   </Form.Item>
 
@@ -620,30 +654,16 @@ const DoctorPage = () => {
                     name="severityLevel"
                     label="Mức độ nghiêm trọng"
                     rules={[{ required: true, message: "Vui lòng chọn mức độ nghiêm trọng" }]}
+                    initialValue="nhẹ"
                   >
-                    <Input.Group compact>
-                      <Button
-                        type={postVaccineInfo.severityLevel === "nhẹ" ? "primary" : "default"}
-                        style={{ width: "33%" }}
-                        onClick={() => setPostVaccineInfo({ ...postVaccineInfo, severityLevel: "nhẹ" })}
-                      >
-                        Nhẹ
-                      </Button>
-                      <Button
-                        type={postVaccineInfo.severityLevel === "trung bình" ? "primary" : "default"}
-                        style={{ width: "33%" }}
-                        onClick={() => setPostVaccineInfo({ ...postVaccineInfo, severityLevel: "trung bình" })}
-                      >
-                        Trung bình
-                      </Button>
-                      <Button
-                        type={postVaccineInfo.severityLevel === "nặng" ? "primary" : "default"}
-                        style={{ width: "34%" }}
-                        onClick={() => setPostVaccineInfo({ ...postVaccineInfo, severityLevel: "nặng" })}
-                      >
-                        Nặng
-                      </Button>
-                    </Input.Group>
+                    <Radio.Group
+                      value={postVaccineInfo.severityLevel}
+                      onChange={(e) => setPostVaccineInfo({ ...postVaccineInfo, severityLevel: e.target.value })}
+                    >
+                      <Radio value="nhẹ">Nhẹ</Radio>
+                      <Radio value="trung bình">Trung bình</Radio>
+                      <Radio value="nặng">Nặng</Radio>
+                    </Radio.Group>
                   </Form.Item>
 
                   <Form.Item
