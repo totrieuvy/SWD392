@@ -1,90 +1,150 @@
-import { Table, Image } from "antd";
+import { Table, Image, Input, Space } from "antd";
 import { useEffect, useState } from "react";
+import { SearchOutlined } from "@ant-design/icons";
 import api from "../../../config/axios";
 import "./VaccineDisplay.scss";
 
 function VaccineDisplay() {
-  const [vaccine, setVaccine] = useState([]);
+  const [vaccines, setVaccines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
-    document.title = "Vaccine";
+    document.title = "Danh sách Vaccine";
   }, []);
 
-  const fetchVaccine = async () => {
+  const fetchVaccines = async () => {
     try {
+      setLoading(true);
       const response = await api.get("v1/vaccine");
-      const filteredData = response.data.data.filter((item) => item.isActive).sort((a, b) => a.price - b.price);
-      setVaccine(filteredData);
+
+      if (response.data && response.data.statusCode === 200) {
+        // Process data to ensure manufacturers is handled correctly
+        const processedData = response.data.data
+          .filter((item) => item.isActive)
+          .map((item) => {
+            // Set manufacturer from manufacturers array for consistent access
+            if (item.manufacturers && item.manufacturers.length > 0) {
+              item.manufacturer = item.manufacturers[0];
+            }
+            return item;
+          })
+          .sort((a, b) => a.price - b.price);
+
+        setVaccines(processedData);
+      }
     } catch (error) {
-      console.error("Error: ", error);
+      console.error("Error fetching vaccines: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchVaccine();
+    fetchVaccines();
   }, []);
+
+  // Filter function for search
+  const handleSearch = (value) => {
+    setSearchText(value);
+  };
+
+  // Filter data based on search text and age filter
+  const getFilteredData = () => {
+    let filteredData = [...vaccines];
+
+    if (searchText) {
+      const searchLower = searchText.toLowerCase();
+      filteredData = filteredData.filter(
+        (item) =>
+          item.vaccineName.toLowerCase().includes(searchLower) ||
+          item.description?.info?.toLowerCase().includes(searchLower) ||
+          item.manufacturer?.name?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filteredData;
+  };
 
   const columns = [
     {
       title: "Tên Vaccine",
       dataIndex: "vaccineName",
       key: "vaccineName",
-    },
-    {
-      title: "Thông tin",
-      dataIndex: ["description", "info"],
-      key: "info",
+      sorter: (a, b) => a.vaccineName.localeCompare(b.vaccineName),
     },
     {
       title: "Đối tượng tiêm",
       dataIndex: ["description", "targetedPatient"],
       key: "targetedPatient",
+      ellipsis: true,
     },
     {
-      title: "Lịch tiêm",
-      dataIndex: ["description", "injectionSchedule"],
-      key: "injectionSchedule",
-    },
-    {
-      title: "Phản ứng vaccine",
-      dataIndex: ["description", "vaccineReaction"],
-      key: "vaccineReaction",
-    },
-    {
-      title: "Tuổi tối thiểu",
-      dataIndex: "minAge",
-      key: "minAge",
-    },
-    {
-      title: "Tuổi tối đa",
-      dataIndex: "maxAge",
-      key: "maxAge",
-    },
-    {
-      title: "Hình ảnh",
-      dataIndex: "image",
-      key: "image",
-      render: (text) => <Image width={100} src={text} alt="Vaccine" />,
-    },
-    {
-      title: "Nhà sản xuất",
-      dataIndex: ["manufacturer", "name"],
-      key: "manufacturerName",
-    },
-    {
-      title: "Quốc gia",
-      dataIndex: ["manufacturer", "countryName"],
-      key: "countryName",
+      title: "Độ tuổi",
+      key: "ageRange",
+      render: (_, record) => <span>{`${record.minAge} - ${record.maxAge} tuổi`}</span>,
+      sorter: (a, b) => a.minAge - b.minAge,
     },
     {
       title: "Giá (VND)",
       dataIndex: "price",
       key: "price",
-      render: (price) => price.toLocaleString("vi-VN") + " VND",
+    },
+    {
+      title: "Số mũi",
+      dataIndex: "numberDose",
+      key: "numberDose",
+      sorter: (a, b) => a.numberDose - b.numberDose,
+    },
+    {
+      title: "Hình ảnh",
+      dataIndex: "image",
+      key: "image",
+      render: (text) => <Image width={80} src={text} alt="Vaccine" fallback="/placeholder-vaccine.jpg" />,
+    },
+    {
+      title: "Nhà sản xuất",
+      key: "manufacturer",
+      render: (_, record) => (
+        <span>
+          {record.manufacturer?.name || "N/A"}
+          <br />
+          <small>({record.manufacturer?.countryName || "N/A"})</small>
+        </span>
+      ),
     },
   ];
 
-  return <Table className="vaccine-table" columns={columns} dataSource={vaccine} rowKey="vaccineId" />;
+  return (
+    <div className="vaccine-display">
+      <div className="vaccine-display__filters">
+        <Space size="large">
+          <Input
+            placeholder="Tìm kiếm vaccine..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{ width: 300 }}
+            allowClear
+          />
+        </Space>
+      </div>
+
+      <Table
+        className="vaccine-table"
+        columns={columns}
+        dataSource={getFilteredData()}
+        rowKey="vaccineId"
+        loading={loading}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ["10", "20", "50"],
+          showTotal: (total) => `Tổng số ${total} vaccine`,
+        }}
+      />
+    </div>
+  );
 }
 
 export default VaccineDisplay;
