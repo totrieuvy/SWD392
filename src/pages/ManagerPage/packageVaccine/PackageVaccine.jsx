@@ -263,7 +263,6 @@ function PackageVaccine() {
             rules={[
               { required: true, message: "Please enter the minimum age" },
               { type: "number", min: 0, message: "Minimum age must be greater or equal 0" },
-              { type: "number", max: 8, message: "Minimum age must be less than 9" },
             ]}
           >
             <InputNumber min={0} style={{ width: "100%" }} />
@@ -275,7 +274,7 @@ function PackageVaccine() {
             rules={[
               { required: true, message: "Please enter the maximum age" },
               { type: "number", min: 0, message: "Minimum age must be greater or equal 0" },
-              { type: "number", max: 8, message: "Minimum age must be less than 9" },
+              { type: "number", max: 96, message: "Maximum age must be less than 96" },
             ]}
           >
             <InputNumber min={0} style={{ width: "100%" }} />
