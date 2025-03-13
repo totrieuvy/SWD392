@@ -45,7 +45,7 @@ const VaccinationSection = () => {
       // Đảm bảo pageIndex ít nhất là 1
       const pageIndex = Math.max(1, page);
 
-      const response = await api.get("v1/vaccine/all", {
+      const response = await api.get("v1/vaccine?pageIndex=1&pageSize=10000", {
         params: {
           pageIndex: pageIndex,
         },

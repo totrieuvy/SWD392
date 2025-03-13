@@ -1,24 +1,19 @@
 import { Table, Tag, Input, Button, Modal, Image, Form, InputNumber, Select, Upload, Popconfirm, Col, Row } from "antd";
 import { useEffect, useState } from "react";
-import { SearchOutlined } from "@ant-design/icons";
+import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import api from "../../../config/axios";
 import "./Vaccine.scss";
 import { formatVND } from "../../../utils/currencyFormat";
 import { useForm } from "antd/es/form/Form";
-import { PlusOutlined } from "@ant-design/icons";
 import uploadFile from "../../../utils/upload";
 import { toast } from "react-toastify";
-import "jspdf-autotable";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 
 if (pdfFonts && pdfFonts.pdfMake) {
   pdfMake.vfs = pdfFonts.pdfMake.vfs;
-} else {
-  console.error("Không thể tải vfs_fonts. Kiểm tra lại import.");
 }
 
-// Tùy chọn: Thêm font tiếng Việt
 pdfMake.fonts = {
   Roboto: {
     normal: "https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf",
@@ -50,24 +45,14 @@ function Vaccine() {
     setPreviewImage(file.url || file.preview);
     setPreviewOpen(true);
   };
+
   const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
+
   const uploadButton = (
-    <button
-      style={{
-        border: 0,
-        background: "none",
-      }}
-      type="button"
-    >
+    <div className="upload-button">
       <PlusOutlined />
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
-        Upload
-      </div>
-    </button>
+      <div>Upload</div>
+    </div>
   );
 
   const getBase64 = (file) =>
@@ -80,9 +65,9 @@ function Vaccine() {
 
   const fetchData = async () => {
     try {
-      const response = await api.get("v1/vaccine");
-      const listmanufacturers = await api.get("v1/manufacturer");
-      setManufacturers(listmanufacturers.data.data);
+      const response = await api.get("v1/vaccine?pageIndex=1&pageSize=10000");
+      const listManufacturers = await api.get("v1/manufacturer");
+      setManufacturers(listManufacturers.data.data);
       const sortedData = response.data.data.sort((a, b) => b.isActive - a.isActive);
       setDataSource(sortedData);
       setFilteredData(sortedData);
@@ -93,7 +78,7 @@ function Vaccine() {
 
   useEffect(() => {
     fetchData();
-    document.title = "Vaccine";
+    document.title = "Vaccine Management";
   }, []);
 
   const handleSearch = () => {
@@ -101,81 +86,74 @@ function Vaccine() {
     setFilteredData(filtered);
   };
 
-  // Cột bảng
   const columns = [
     {
       title: "Vaccine Name",
       dataIndex: "vaccineName",
       key: "vaccineName",
+      sorter: (a, b) => a.vaccineName.localeCompare(b.vaccineName),
     },
     {
       title: "Image",
       dataIndex: "image",
       key: "image",
-      render: (text) => (
-        <Image src={text} alt="Vaccine" style={{ width: 50, height: 50, objectFit: "cover", borderRadius: "10px" }} />
-      ),
+      render: (text) => <Image src={text} alt="Vaccine" className="vaccine-image" />,
     },
     {
       title: "Manufacturer",
-      dataIndex: ["manufacturer", "name"],
+      dataIndex: ["manufacturers", 0, "name"],
       key: "manufacturer",
+      sorter: (a, b) => a.manufacturers[0].name.localeCompare(b.manufacturers[0].name),
     },
     {
       title: "Price",
       dataIndex: "price",
       key: "price",
       render: (price) => formatVND(price),
+      sorter: (a, b) => a.price - b.price,
     },
     {
-      title: "Active Status",
+      title: "Status",
       dataIndex: "isActive",
       key: "isActive",
       render: (isActive) => <Tag color={isActive ? "green" : "red"}>{isActive ? "Active" : "Inactive"}</Tag>,
+      filters: [
+        { text: "Active", value: true },
+        { text: "Inactive", value: false },
+      ],
+      onFilter: (value, record) => record.isActive === value,
     },
     {
-      title: "Action",
+      title: "Actions",
       dataIndex: "vaccineId",
       key: "vaccineId",
       render: (vaccineId, record) => (
-        <div style={{ display: "flex", gap: "5px" }}>
-          <Button color="cyan" variant="solid" onClick={() => handleDetail(record)}>
+        <div className="action-buttons">
+          <Button className="detail-btn" onClick={() => handleDetail(record)}>
             Detail
           </Button>
           <Button
-            type="primary"
-            style={{ marginRight: 5 }}
+            className="edit-btn"
             onClick={() => {
               setIsUpdate(true);
               form.setFieldsValue({
                 ...record,
-                manufacturerId: record.manufacturer?.manufacturerId || null,
+                manufacturerId: record.manufacturers[0]?.manufacturerId || null,
               });
-
               setOpen(true);
               if (record.image) {
-                setFileList([
-                  {
-                    name: "image.png",
-                    status: "done",
-                    url: record.image,
-                  },
-                ]);
+                setFileList([{ name: "image.png", status: "done", url: record.image }]);
               }
             }}
           >
             Edit
           </Button>
           <Popconfirm
-            title="Delete vaccine"
-            description="Are you sure to delete this vaccine?"
-            okText="Yes"
-            cancelText="No"
+            title="Delete Vaccine"
+            description="Are you sure you want to delete this vaccine?"
             onConfirm={() => handleDelete(vaccineId)}
           >
-            <Button type="primary" danger>
-              Delete
-            </Button>
+            <Button className="delete-btn">Delete</Button>
           </Popconfirm>
         </div>
       ),
@@ -185,15 +163,18 @@ function Vaccine() {
   const handleDelete = async (vaccineId) => {
     try {
       await api.delete(`v1/vaccine/${vaccineId}`);
-      toast.success("Delete vaccine successfully");
+      toast.success("Vaccine deleted successfully");
       fetchData();
     } catch (error) {
       console.log(error);
+      toast.error("Failed to delete vaccine");
     }
   };
 
   const handleCancel = () => {
     setOpen(false);
+    form.resetFields();
+    setFileList([]);
   };
 
   const handleOpenModal = () => {
@@ -205,53 +186,39 @@ function Vaccine() {
 
   const handleSubmitForm = async (values) => {
     setLoading(true);
-
     try {
-      if (values.image) {
-        if (values.image.file && values.image.file.originFileObj) {
-          const url = await uploadFile(values.image.file.originFileObj);
-          values.image = url;
-        }
+      if (values.image?.file) {
+        const url = await uploadFile(values.image.file.originFileObj);
+        values.image = url;
       }
 
-      if (values.vaccineId || isUpdate) {
-        console.log("id", values.vaccineId);
-        await api.put(`v1/vaccine/${values.vaccineId}`, {
-          vaccineName: values.vaccineName,
-          description: values.description,
-          minAge: values.minAge,
-          maxAge: values.maxAge,
-          numberDose: values.numberDose,
-          duration: values.duration,
-          unit: values.unit,
-          image: values.image,
-          manufacturerId: values.manufacturerId,
-          price: values.price,
-          isActive: true,
-        });
-        toast.success("Update vaccine sucessfully");
+      const payload = {
+        vaccineName: values.vaccineName,
+        description: values.description,
+        minAge: values.minAge,
+        maxAge: values.maxAge,
+        numberDose: values.numberDose,
+        duration: values.duration,
+        unit: values.unit,
+        image: values.image,
+        manufacturerId: values.manufacturerId,
+        price: values.price,
+        isActive: true,
+      };
+
+      if (isUpdate) {
+        await api.put(`v1/vaccine/${values.vaccineId}`, payload);
+        toast.success("Vaccine updated successfully");
       } else {
-        await api.post("v1/vaccine", {
-          vaccineName: values.vaccineName,
-          description: values.description,
-          minAge: values.minAge,
-          maxAge: values.maxAge,
-          numberDose: values.numberDose,
-          duration: values.duration,
-          unit: values.unit,
-          image: values.image,
-          manufacturerId: values.manufacturerId,
-          price: values.price,
-          isActive: true,
-        });
-        toast.success("Add vaccine sucessfully");
+        await api.post("v1/vaccine", payload);
+        toast.success("Vaccine added successfully");
       }
     } catch (error) {
       console.log(error);
+      toast.error("Operation failed");
     } finally {
       fetchData();
       handleCancel();
-      form.resetFields();
       setLoading(false);
     }
   };
@@ -269,98 +236,88 @@ function Vaccine() {
   const exportPDF = () => {
     const docDefinition = {
       content: [
-        { text: "Danh sách vaccine", style: "header" },
-        { text: `Ngày xuất: ${new Date().toLocaleDateString()}`, style: "subheader" },
+        { text: "Vaccine List", style: "header" },
+        { text: `Export Date: ${new Date().toLocaleDateString()}`, style: "subheader" },
         {
           table: {
             headerRows: 1,
             widths: ["*", "*", "*", "auto", "auto", "auto", "*"],
             body: [
-              ["Tên Vaccine", "Nhà sản xuất", "Giá", "Tuổi tối thiểu", "Tuổi tối đa", "Số liều", "Trạng thái"],
+              ["Vaccine Name", "Manufacturer", "Price", "Min Age", "Max Age", "Doses", "Status"],
               ...filteredData.map((item) => [
                 item.vaccineName,
-                item.manufacturer?.name || "",
+                item.manufacturers[0]?.name || "N/A",
                 formatVND(item.price),
                 item.minAge.toString(),
                 item.maxAge.toString(),
                 item.numberDose.toString(),
-                item.isActive ? "Đang hoạt động" : "Không hoạt động",
+                item.isActive ? "Active" : "Inactive",
               ]),
             ],
           },
         },
-        { text: `Tổng số vaccine: ${filteredData.length}`, style: "summary" },
-        { text: `Vaccine đang hoạt động: ${filteredData.filter((item) => item.isActive).length}`, style: "summary" },
-        { text: `Vaccine không hoạt động: ${filteredData.filter((item) => !item.isActive).length}`, style: "summary" },
+        { text: `Total Vaccines: ${filteredData.length}`, style: "summary" },
+        { text: `Active Vaccines: ${filteredData.filter((item) => item.isActive).length}`, style: "summary" },
+        { text: `Inactive Vaccines: ${filteredData.filter((item) => !item.isActive).length}`, style: "summary" },
       ],
       styles: {
-        header: {
-          fontSize: 18,
-          bold: true,
-          margin: [0, 0, 0, 10],
-        },
-        subheader: {
-          fontSize: 12,
-          margin: [0, 0, 0, 20],
-        },
-        summary: {
-          fontSize: 12,
-          margin: [0, 10, 0, 0],
-        },
+        header: { fontSize: 20, bold: true, margin: [0, 0, 0, 20] },
+        subheader: { fontSize: 12, margin: [0, 0, 0, 20] },
+        summary: { fontSize: 12, margin: [0, 10, 0, 0] },
       },
-      defaultStyle: {
-        font: "Roboto",
-      },
+      defaultStyle: { font: "Roboto" },
     };
-
-    try {
-      pdfMake.createPdf(docDefinition).download("danh-sach-vaccine.pdf");
-      toast.success("Xuất PDF thành công");
-    } catch (error) {
-      console.error("Lỗi khi tạo PDF:", error);
-      toast.error("Có lỗi khi xuất PDF");
-    }
+    pdfMake.createPdf(docDefinition).download("vaccine-list.pdf");
+    toast.success("PDF exported successfully");
   };
 
   return (
     <div className="Vaccine">
-      <h1>Danh sách vaccines</h1>
-
+      <h1>Vaccine Management</h1>
       <div className="Vaccine__above">
-        <div style={{ marginBottom: 16, display: "flex", gap: "10px" }}>
+        <div className="search-section">
           <Input
-            placeholder="Nhập tên vaccine"
+            placeholder="Search by vaccine name"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 250 }}
+            prefix={<SearchOutlined />}
           />
-          <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-            Tìm kiếm
+          <Button type="primary" onClick={handleSearch}>
+            Search
           </Button>
         </div>
-
-        <div>
-          <Button color="purple" variant="solid" onClick={exportPDF}>
-            Xuất file pdf
+        <div className="action-section">
+          <Button className="export-btn" onClick={exportPDF}>
+            Export PDF
           </Button>
           <Button type="primary" onClick={handleOpenModal}>
-            Thêm mới vaccine
+            Add Vaccine
           </Button>
         </div>
       </div>
-      <Table columns={columns} dataSource={filteredData} rowKey="id" scroll={{ x: "max-content", y: 400 }} />
+
+      <Table
+        columns={columns}
+        dataSource={filteredData}
+        rowKey="vaccineId"
+        pagination={{ pageSize: 10 }}
+        scroll={{ x: "max-content" }}
+        className="vaccine-table"
+      />
+
       <Modal
         open={open}
-        title="Vaccine"
+        title={isUpdate ? "Update Vaccine" : "Add New Vaccine"}
         onCancel={handleCancel}
         onOk={() => form.submit()}
         confirmLoading={loading}
-        width={800}
+        width={900}
+        className="vaccine-modal"
       >
-        <Form form={form} onFinish={handleSubmitForm} labelCol={{ span: 24 }}>
-          <Row gutter={16}>
-            <Col span={14}>
-              <Form.Item name="vaccineId" label="vaccineId" hidden>
+        <Form form={form} onFinish={handleSubmitForm} layout="vertical">
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="vaccineId" hidden>
                 <Input />
               </Form.Item>
               <Form.Item
@@ -370,37 +327,19 @@ function Vaccine() {
               >
                 <Input placeholder="Enter vaccine name" />
               </Form.Item>
-
               <Form.Item
                 name={["description", "info"]}
                 label="Information"
                 rules={[{ required: true, message: "Please enter information" }]}
               >
-                <Input />
+                <Input.TextArea rows={3} />
               </Form.Item>
-
-              <Form.Item
-                name={["description", "targetedPatient"]}
-                label="Targeted Patients"
-                rules={[{ required: true, message: "Please enter targeted patients" }]}
-              >
-                <Input />
-              </Form.Item>
-
-              <Form.Item
-                name={["description", "injectionSchedule"]}
-                label="Injection Schedule"
-                rules={[{ required: true, message: "Please enter injection schedule" }]}
-              >
-                <Input />
-              </Form.Item>
-
               <Form.Item
                 name="manufacturerId"
                 label="Manufacturer"
                 rules={[{ required: true, message: "Please select manufacturer" }]}
               >
-                <Select disabled={isUpdate}>
+                <Select disabled={isUpdate} placeholder="Select manufacturer">
                   {manufacturers.map((m) => (
                     <Select.Option key={m.manufacturerId} value={m.manufacturerId}>
                       {m.name}
@@ -408,100 +347,98 @@ function Vaccine() {
                   ))}
                 </Select>
               </Form.Item>
-
-              <Form.Item name="price" label="Price" rules={[{ required: true, message: "Enter price" }]}>
-                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter price" />
+              <Form.Item name="price" label="Price (VND)" rules={[{ required: true, message: "Please enter price" }]}>
+                <InputNumber style={{ width: "100%" }} min={0} />
               </Form.Item>
             </Col>
-
-            <Col span={10}>
+            <Col span={12}>
               <Form.Item
-                name={["description", "vaccineReaction"]}
-                label="Vaccine Reaction"
-                rules={[{ required: true, message: "Please enter vaccine reactions" }]}
+                name={["description", "targetedPatient"]}
+                label="Targeted Patients"
+                rules={[{ required: true, message: "Please enter targeted patients" }]}
               >
                 <Input />
               </Form.Item>
-
               <Form.Item
-                name="minAge"
-                label="Minimum Age (month)"
-                rules={[
-                  { required: true, message: "Please enter minimum age" },
-                  { type: "number", min: 0, message: "Minimum age must be greater or equal 0" },
-                  { type: "number", max: 8, message: "Minimum age must be less than 9" },
-                ]}
+                name={["description", "injectionSchedule"]}
+                label="Injection Schedule"
+                rules={[{ required: true, message: "Please enter injection schedule" }]}
               >
-                <InputNumber style={{ width: "100%" }} placeholder="Enter minimum age" />
+                <Input />
               </Form.Item>
-
               <Form.Item
-                name="maxAge"
-                label="Maximum Age (month)"
-                rules={[
-                  { required: true, message: "Please enter maximum age" },
-                  { type: "number", min: 1, message: "Maximum age must be greater than 0" },
-                  { type: "number", max: 12, message: "Maximum age must be less than 12" },
-                ]}
+                name={["description", "vaccineReaction"]}
+                label="Vaccine Reaction"
+                rules={[{ required: true, message: "Please enter vaccine reaction" }]}
               >
-                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter maximum age" />
+                <Input />
               </Form.Item>
-
-              <Form.Item
-                name="numberDose"
-                label="Number of Doses"
-                rules={[{ required: true, message: "Please enter number of doses" }]}
-              >
-                <InputNumber style={{ width: "100%" }} min={1} placeholder="Enter number of doses" />
-              </Form.Item>
-
-              <Form.Item
-                name="duration"
-                label="Duration (days)"
-                rules={[{ required: true, message: "Please enter duration" }]}
-              >
-                <InputNumber style={{ width: "100%" }} min={0} placeholder="Enter duration" />
-              </Form.Item>
-
-              <Form.Item
-                name="unit"
-                label="Unit"
-                rules={[{ required: true, message: "Please enter unit" }]}
-                initialValue="year"
-              >
-                <Input placeholder="Enter unit" disabled />
-              </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="minAge"
+                    label="Min Age (months)"
+                    rules={[
+                      { required: true, message: "Required" },
+                      { type: "number", min: 0, message: "Min age must be 0" },
+                    ]}
+                  >
+                    <InputNumber style={{ width: "100%" }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="maxAge"
+                    label="Max Age (months)"
+                    rules={[
+                      { required: true, message: "Required" },
+                      { type: "number", min: 0, max: 96, message: "0-96 months" },
+                    ]}
+                  >
+                    <InputNumber style={{ width: "100%" }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="numberDose"
+                    label="Number of Doses"
+                    rules={[{ required: true, message: "Required" }]}
+                  >
+                    <InputNumber style={{ width: "100%" }} min={1} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="duration" label="Duration (days)" rules={[{ required: true, message: "Required" }]}>
+                    <InputNumber style={{ width: "100%" }} min={0} />
+                  </Form.Item>
+                </Col>
+              </Row>
             </Col>
           </Row>
-          <Form.Item label="Image" name="image" rules={[{ required: true, message: "Please upload image" }]}>
-            <Upload
-              action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
-              listType="picture-card"
-              fileList={fileList}
-              onPreview={handlePreview}
-              onChange={handleChange}
-            >
-              {fileList.length >= 8 ? null : uploadButton}
+          <Form.Item name="image" label="Image" rules={[{ required: true, message: "Please upload an image" }]}>
+            <Upload listType="picture-card" fileList={fileList} onPreview={handlePreview} onChange={handleChange}>
+              {fileList.length >= 1 ? null : uploadButton}
             </Upload>
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* Modal Detail */}
-      <Modal open={detailOpen} title="Vaccine Details" onCancel={handleCloseDetail} footer={null}>
+      <Modal open={detailOpen} title="Vaccine Details" onCancel={handleCloseDetail} footer={null} width={600}>
         {selectedVaccine && (
-          <div>
+          <div className="detail-content">
             <p>
               <strong>Name:</strong> {selectedVaccine.vaccineName}
             </p>
             <p>
-              <strong>Manufacturer:</strong> {selectedVaccine.manufacturer?.name}
+              <strong>Manufacturer:</strong> {selectedVaccine.manufacturers[0]?.name || "N/A"}
             </p>
             <p>
               <strong>Price:</strong> {formatVND(selectedVaccine.price)}
             </p>
             <p>
-              <strong>Active:</strong> {selectedVaccine.isActive ? "Yes" : "No"}
+              <strong>Status:</strong> {selectedVaccine.isActive ? "Active" : "Inactive"}
             </p>
             <p>
               <strong>Info:</strong> {selectedVaccine.description?.info}
@@ -513,41 +450,31 @@ function Vaccine() {
               <strong>Injection Schedule:</strong> {selectedVaccine.description?.injectionSchedule}
             </p>
             <p>
-              <strong>Vaccine Reaction:</strong> {selectedVaccine.description?.vaccineReaction}
+              <strong>Reaction:</strong> {selectedVaccine.description?.vaccineReaction}
             </p>
             <p>
-              <strong>Min Age:</strong> {selectedVaccine.minAge}
+              <strong>Age Range:</strong> {selectedVaccine.minAge} - {selectedVaccine.maxAge} months
             </p>
             <p>
-              <strong>Max Age:</strong> {selectedVaccine.maxAge}
-            </p>
-            <p>
-              <strong>Number of Doses:</strong> {selectedVaccine.numberDose}
+              <strong>Doses:</strong> {selectedVaccine.numberDose}
             </p>
             <p>
               <strong>Duration:</strong> {selectedVaccine.duration} days
             </p>
-            <p>
-              <strong>Unit:</strong> {selectedVaccine.unit}
-            </p>
-            <Image src={selectedVaccine.image} alt="Vaccine" style={{ width: "100px" }} />
+            <Image src={selectedVaccine.image} alt="Vaccine" className="detail-image" />
           </div>
         )}
       </Modal>
 
-      {previewImage && (
-        <Image
-          wrapperStyle={{
-            display: "none",
-          }}
-          preview={{
-            visible: previewOpen,
-            onVisibleChange: (visible) => setPreviewOpen(visible),
-            afterOpenChange: (visible) => !visible && setPreviewImage(""),
-          }}
-          src={previewImage}
-        />
-      )}
+      <Image
+        wrapperStyle={{ display: "none" }}
+        preview={{
+          visible: previewOpen,
+          onVisibleChange: (visible) => setPreviewOpen(visible),
+          afterOpenChange: (visible) => !visible && setPreviewImage(""),
+        }}
+        src={previewImage}
+      />
     </div>
   );
 }
