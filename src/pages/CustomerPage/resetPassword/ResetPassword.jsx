@@ -1,7 +1,7 @@
 import { Button, Form, Input, message } from "antd";
 import { useForm } from "antd/es/form/Form";
 import "./ResetPassword.scss";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import api from "../../../config/axios";
 import Authentication from "../../../components/authentication/Authentication";
