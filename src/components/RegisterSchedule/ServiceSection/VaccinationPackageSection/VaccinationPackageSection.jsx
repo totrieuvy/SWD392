@@ -14,6 +14,7 @@ import {
   Tag,
   List,
   Spin,
+  Image,
 } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../../../config/axios";
@@ -311,7 +312,8 @@ const VaccinationPackageSection = () => {
         <div className="selected-vaccines-list">
           {selectedPackage.selectedVaccines.map((vaccine) => (
             <div key={vaccine.vaccineId} className="vaccine-item">
-              <div>
+              <Image src={vaccine.image} alt={vaccine.vaccineName} className="vaccine-image" />
+              <div className="vaccine-details">
                 <div className="vaccine-name">{vaccine.vaccineName}</div>
                 <div className="vaccine-origin">
                   {vaccine.manufacturers[0]?.name} ({vaccine.manufacturers[0]?.countryCode})
@@ -434,6 +436,7 @@ const VaccinationPackageSection = () => {
                               {pkg.vaccines.map((vaccine) => (
                                 <Col xs={24} sm={12} md={8} key={vaccine.vaccineId}>
                                   <Card className="vaccine-card">
+                                    <Image src={vaccine.image} alt={vaccine.vaccineName} className="vaccine-image" />
                                     <div className="vaccine-name">{vaccine.vaccineName}</div>
                                     <div className="vaccine-info">{vaccine.description?.info}</div>
                                     <div className="vaccine-price">{formatPrice(vaccine.price)}</div>
@@ -465,16 +468,21 @@ const VaccinationPackageSection = () => {
         open={vaccineModalVisible}
         onCancel={() => setVaccineModalVisible(false)}
         footer={null}
-        width={700}
+        width={800}
       >
         {currentVaccine && (
           <div className="current-vaccine-info">
             <h4>Vắc-xin hiện tại:</h4>
-            <div>{currentVaccine.vaccineName}</div>
-            <div>
-              {currentVaccine.manufacturers[0]?.name} ({currentVaccine.manufacturers[0]?.countryCode})
+            <div className="vaccine-current-details">
+              <Image src={currentVaccine.image} alt={currentVaccine.vaccineName} className="vaccine-image" />
+              <div>
+                <div>{currentVaccine.vaccineName}</div>
+                <div>
+                  {currentVaccine.manufacturers[0]?.name} ({currentVaccine.manufacturers[0]?.countryCode})
+                </div>
+                <div className="price">{formatPrice(currentVaccine.price)}</div>
+              </div>
             </div>
-            <div className="price">{formatPrice(currentVaccine.price)}</div>
           </div>
         )}
 
@@ -486,6 +494,12 @@ const VaccinationPackageSection = () => {
             rowKey="vaccineId"
             pagination={false}
             columns={[
+              {
+                title: "Hình ảnh",
+                dataIndex: "image",
+                key: "image",
+                render: (image) => <Image src={image} alt="Vaccine" className="vaccine-image-table" />,
+              },
               { title: "Vắc-xin", dataIndex: "vaccineName", key: "vaccineName" },
               {
                 title: "Nhà sản xuất",
