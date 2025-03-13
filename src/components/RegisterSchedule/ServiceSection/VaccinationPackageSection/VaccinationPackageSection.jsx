@@ -91,7 +91,7 @@ const VaccinationPackageSection = () => {
 
   const fetchAllVaccines = async () => {
     try {
-      const response = await api.get("v1/vaccine/all");
+      const response = await api.get("v1/vaccine?pageIndex=1&pageSize=10000");
       if (response.data && response.data.data) {
         setAllVaccines(response.data.data);
       }
@@ -119,11 +119,9 @@ const VaccinationPackageSection = () => {
 
   const openVaccineAlternatives = (vaccine) => {
     setCurrentVaccine(vaccine);
-
     const alternatives = allVaccines.filter(
       (v) => v.vaccineName === vaccine.vaccineName && v.vaccineId !== vaccine.vaccineId
     );
-
     setAlternativeVaccines(alternatives);
     setVaccineModalVisible(true);
   };
@@ -136,9 +134,8 @@ const VaccinationPackageSection = () => {
           newVaccine: newVaccine,
         })
       );
-
       message.success(
-        `Đã thay thế vắc-xin bằng phiên bản ${newVaccine.manufacturer.name} (${newVaccine.manufacturer.countryCode})`
+        `Đã thay thế vắc-xin bằng phiên bản ${newVaccine.manufacturers[0]?.name} (${newVaccine.manufacturers[0]?.countryCode})`
       );
       setVaccineModalVisible(false);
       setTemporarySchedules([]);
@@ -163,21 +160,12 @@ const VaccinationPackageSection = () => {
   };
 
   const fetchTemporarySchedules = async (date) => {
-    if (!childId || !selectedPackage.packageId || !date) {
-      return;
-    }
+    if (!childId || !selectedPackage.packageId || !date) return;
 
     try {
       setScheduleLoading(true);
-
       const vaccineIds = selectedPackage.selectedVaccines.map((vaccine) => vaccine.vaccineId);
-
-      const scheduleRequest = {
-        vaccineIds: vaccineIds,
-        childId: childId,
-        startDate: date,
-      };
-
+      const scheduleRequest = { vaccineIds, childId, startDate: date };
       const response = await api.post("schedule", [scheduleRequest]);
 
       if (response.data && response.data.code === "Success") {
@@ -196,8 +184,7 @@ const VaccinationPackageSection = () => {
 
   const formatDateForAPI = (dateString) => {
     if (!dateString) return "";
-    const date = dayjs(dateString);
-    return date.format("DD-MM-YYYY");
+    return dayjs(dateString).format("DD-MM-YYYY");
   };
 
   const handleSubmitVaccination = () => {
@@ -205,21 +192,17 @@ const VaccinationPackageSection = () => {
       message.warning("Vui lòng chọn gói tiêm chủng và ngày tiêm trước");
       return;
     }
-
     setConfirmModalVisible(true);
   };
 
   const confirmVaccination = async () => {
     try {
       setLoading(true);
-
       const vaccineIds = selectedPackage.selectedVaccines.map((vaccine) => vaccine.vaccineId);
-
       const formattedInjectionDate = formatDateForAPI(selectedPackage.vaccinationDate);
-
       const orderPayload = {
-        userId: userId,
-        childId: childId,
+        userId,
+        childId,
         fullName: childName,
         dob: childDob,
         gender: childGender,
@@ -230,21 +213,14 @@ const VaccinationPackageSection = () => {
       };
 
       const orderResponse = await api.post("order", orderPayload);
-
       if (orderResponse.data && orderResponse.data.code === "Success") {
         message.success("Đã tạo đơn hàng tiêm chủng thành công");
-
         if (orderResponse.data.data) {
           window.location.href = orderResponse.data.data;
           return;
         }
 
-        const scheduleRequest = {
-          vaccineIds: vaccineIds,
-          childId: childId,
-          startDate: selectedPackage.vaccinationDate,
-        };
-
+        const scheduleRequest = { vaccineIds, childId, startDate: selectedPackage.vaccinationDate };
         const scheduleResponse = await api.post("schedule", [scheduleRequest]);
 
         if (scheduleResponse.data && scheduleResponse.data.code === "Success") {
@@ -270,9 +246,7 @@ const VaccinationPackageSection = () => {
     return packages.reduce((groups, pkg) => {
       if (pkg.minAge === null || pkg.maxAge === null) return groups;
       const ageGroup = `${pkg.minAge} - ${pkg.maxAge}`;
-      if (!groups[ageGroup]) {
-        groups[ageGroup] = [];
-      }
+      if (!groups[ageGroup]) groups[ageGroup] = [];
       groups[ageGroup].push(pkg);
       return groups;
     }, {});
@@ -280,41 +254,28 @@ const VaccinationPackageSection = () => {
 
   const sortedPackageGroups = () => {
     const packageGroups = groupPackagesByAge();
-    return Object.entries(packageGroups).sort((a, b) => {
-      const minAgeA = parseInt(a[0].split("-")[0].trim(), 10);
-      const minAgeB = parseInt(b[0].split("-")[0].trim(), 10);
+    return Object.entries(packageGroups).sort(([a], [b]) => {
+      const minAgeA = parseInt(a.split("-")[0].trim(), 10);
+      const minAgeB = parseInt(b.split("-")[0].trim(), 10);
       return minAgeA - minAgeB;
     });
   };
 
   const calculateTotalPrice = () => {
     if (!selectedPackage.packageId) return 0;
-
     const packageInfo = packages.find((pkg) => pkg.packageId === selectedPackage.packageId);
     if (!packageInfo) return 0;
 
-    let totalVaccinePrice = 0;
-
-    selectedPackage.selectedVaccines.forEach((vaccine) => {
-      totalVaccinePrice += vaccine.price;
-    });
-
-    let discountAmount = 0;
-    if (packageInfo.discount) {
-      discountAmount = (totalVaccinePrice * packageInfo.discount) / 100;
-    }
-
+    let totalVaccinePrice = selectedPackage.selectedVaccines.reduce((sum, vaccine) => sum + vaccine.price, 0);
+    let discountAmount = packageInfo.discount ? (totalVaccinePrice * packageInfo.discount) / 100 : 0;
     const finalPrice = totalVaccinePrice - discountAmount;
-
     return finalPrice > 0 ? finalPrice : 0;
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    }).format(price);
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(
+      price
+    );
   };
 
   const isPackageAppropriateForChild = (pkg) => {
@@ -323,21 +284,8 @@ const VaccinationPackageSection = () => {
   };
 
   const formatMonthRange = (minMonth, maxMonth) => {
-    if (minMonth === 0 && maxMonth === 0) {
-      return "Sơ sinh";
-    }
-
-    let result = "";
-
-    if (minMonth === 0) {
-      result = "Sơ sinh";
-    } else {
-      result = `${minMonth} tháng`;
-    }
-
-    result += " - " + `${maxMonth} tháng`;
-
-    return result;
+    if (minMonth === 0 && maxMonth === 0) return "Sơ sinh";
+    return `${minMonth === 0 ? "Sơ sinh" : `${minMonth} tháng`} - ${maxMonth} tháng`;
   };
 
   const renderSelectedPackageDetails = () => {
@@ -351,28 +299,24 @@ const VaccinationPackageSection = () => {
 
     return (
       <div className="selected-package">
-        <h3 className="text-lg font-bold mb-3">{selectedPackage.packageName}</h3>
-
-        {childName && <div className="mb-2">Trẻ: {childName}</div>}
+        <h3 className="package-title">{selectedPackage.packageName}</h3>
+        {childName && <div className="child-info">Trẻ: {childName}</div>}
         {childAge !== null && (
-          <div className="mb-2">
+          <div className="child-info">
             Tuổi: {childAge} tháng ({(childAge / 12).toFixed(1)} năm)
           </div>
         )}
 
-        <h4 className="text-md font-medium mt-4 mb-2">Vắc-xin đã chọn:</h4>
+        <h4 className="vaccines-title">Vắc-xin đã chọn:</h4>
         <div className="selected-vaccines-list">
           {selectedPackage.selectedVaccines.map((vaccine) => (
-            <div
-              key={vaccine.vaccineId}
-              className="vaccine-item p-3 border rounded mb-2 flex justify-between items-center"
-            >
+            <div key={vaccine.vaccineId} className="vaccine-item">
               <div>
-                <div className="vaccine-name font-medium">{vaccine.vaccineName}</div>
-                <div className="vaccine-origin text-sm text-gray-600">
-                  {vaccine.manufacturer?.name} ({vaccine.manufacturer?.countryCode})
+                <div className="vaccine-name">{vaccine.vaccineName}</div>
+                <div className="vaccine-origin">
+                  {vaccine.manufacturers[0]?.name} ({vaccine.manufacturers[0]?.countryCode})
                 </div>
-                <div className="vaccine-price text-blue-600">{formatPrice(vaccine.price)}</div>
+                <div className="vaccine-price">{formatPrice(vaccine.price)}</div>
               </div>
               <Button type="primary" size="small" onClick={() => openVaccineAlternatives(vaccine)}>
                 Đổi phiên bản
@@ -381,26 +325,26 @@ const VaccinationPackageSection = () => {
           ))}
         </div>
 
-        <div className="date-selection mt-4 mb-4">
-          <label className="block mb-2">Ngày tiêm chủng:</label>
+        <div className="date-selection">
+          <label>Ngày tiêm chủng:</label>
           <DatePicker
-            className="w-full"
+            className="date-picker"
             onChange={handleDateChange}
             value={selectedPackage.vaccinationDate ? dayjs(selectedPackage.vaccinationDate) : null}
             placeholder="Chọn ngày tiêm chủng"
             disabled={scheduleLoading}
           />
-          {scheduleLoading && <div className="mt-2 text-gray-600">Đang tải xem trước lịch...</div>}
+          {scheduleLoading && <div className="loading-text">Đang tải xem trước lịch...</div>}
         </div>
 
-        <div className="total-price flex justify-between items-center p-3 bg-gray-100 rounded mb-4">
-          <span className="font-bold">Tổng cộng:</span>
-          <span className="text-blue-600 font-bold">{formatPrice(calculateTotalPrice())}</span>
+        <div className="total-price">
+          <span>Tổng cộng:</span>
+          <span className="price-value">{formatPrice(calculateTotalPrice())}</span>
         </div>
 
         <Button
           type="primary"
-          className="w-full"
+          className="submit-btn"
           onClick={handleSubmitVaccination}
           disabled={!selectedPackage.vaccinationDate || loading}
         >
@@ -414,28 +358,23 @@ const VaccinationPackageSection = () => {
     if (temporarySchedules.length === 0) return null;
 
     const groupedByType = temporarySchedules.reduce((acc, schedule) => {
-      if (!acc[schedule.vaccineType]) {
-        acc[schedule.vaccineType] = [];
-      }
+      if (!acc[schedule.vaccineType]) acc[schedule.vaccineType] = [];
       acc[schedule.vaccineType].push(schedule);
       return acc;
     }, {});
 
     return (
-      <div className="temporary-schedules mt-4 border rounded p-4">
-        <h3 className="text-lg font-bold mb-3">Lịch tiêm chủng dự kiến</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Đây là xem trước lịch tiêm chủng của bạn. Nhấp Đăng ký tiêm chủng để xác nhận.
-        </p>
-
+      <div className="temporary-schedules">
+        <h3 className="schedule-title">Lịch tiêm chủng dự kiến</h3>
+        <p className="schedule-note">Đây là xem trước lịch tiêm chủng của bạn. Nhấp Đăng ký tiêm chủng để xác nhận.</p>
         {Object.entries(groupedByType).map(([vaccineType, schedules]) => (
-          <div key={vaccineType} className="vaccine-type-group mb-4">
-            <h4 className="font-medium mb-2">{vaccineType}</h4>
+          <div key={vaccineType} className="vaccine-type-group">
+            <h4>{vaccineType}</h4>
             <List
               bordered
               dataSource={schedules}
               renderItem={(item) => (
-                <List.Item className="flex justify-between">
+                <List.Item className="schedule-item">
                   <div>{dayjs(item.scheduleDate).format("DD/MM/YYYY")}</div>
                   <Tag color="blue">Xem trước</Tag>
                 </List.Item>
@@ -448,83 +387,78 @@ const VaccinationPackageSection = () => {
   };
 
   return (
-    <>
-      <div className="vaccination-package-section">
-        <Row gutter={24}>
-          <Col xs={24} md={16}>
-            <Form.Item label="Gói tiêm chủng" className="mt-4">
-              {loading ? (
-                <div className="loading-state">
-                  <Spin /> Đang tải gói tiêm chủng...
-                </div>
-              ) : (
-                <Collapse>
-                  {sortedPackageGroups().map(([ageRange, packagesInGroup]) => {
-                    const minMonth = parseInt(ageRange.split(" - ")[0].trim(), 10);
-                    const maxMonth = parseInt(ageRange.split(" - ")[1].trim(), 10);
-                    return (
-                      <Panel
-                        header={
-                          <div className="flex items-center">
-                            <span>Gói cho {formatMonthRange(minMonth, maxMonth)}</span>
-                            {childAge !== null && childAge >= minMonth && childAge <= maxMonth && (
-                              <Tag color="green" className="ml-2">
-                                Khuyến nghị cho con bạn
-                              </Tag>
-                            )}
-                          </div>
-                        }
-                        key={ageRange}
-                      >
-                        {packagesInGroup.map((pkg) => (
-                          <Card
-                            key={pkg.packageId}
-                            className={`w-full mb-4 ${
-                              selectedPackage.packageId === pkg.packageId ? "border-primary border-2" : ""
-                            } ${isPackageAppropriateForChild(pkg) ? "bg-blue-50" : ""}`}
-                            title={
-                              <div className="flex justify-between items-center">
-                                <span>{pkg.packageName}</span>
-                                <Checkbox
-                                  checked={selectedPackage.packageId === pkg.packageId}
-                                  onChange={() => handlePackageSelect(pkg)}
-                                />
-                              </div>
-                            }
-                            extra={<span>{formatPrice(pkg.price)}</span>}
-                          >
-                            <p>{pkg.description}</p>
-                            {pkg.vaccines && pkg.vaccines.length > 0 ? (
-                              <Row gutter={[16, 16]}>
-                                {pkg.vaccines.map((vaccine) => (
-                                  <Col xs={24} sm={12} md={8} lg={8} key={vaccine.vaccineId}>
-                                    <Card className="w-full">
-                                      <div className="font-medium">{vaccine.vaccineName}</div>
-                                      <div className="text-gray-500 text-sm">{vaccine.description?.info}</div>
-                                      <div className="text-blue-600 mt-2">{formatPrice(vaccine.price)}</div>
-                                    </Card>
-                                  </Col>
-                                ))}
-                              </Row>
-                            ) : (
-                              <p>Không có vắc-xin</p>
-                            )}
-                          </Card>
-                        ))}
-                      </Panel>
-                    );
-                  })}
-                </Collapse>
-              )}
-            </Form.Item>
-          </Col>
+    <div className="vaccination-package-section">
+      <Row gutter={24}>
+        <Col xs={24} md={16}>
+          <Form.Item label="Gói tiêm chủng" className="package-label">
+            {loading ? (
+              <div className="loading-state">
+                <Spin /> Đang tải gói tiêm chủng...
+              </div>
+            ) : (
+              <Collapse>
+                {sortedPackageGroups().map(([ageRange, packagesInGroup]) => {
+                  const [minMonth, maxMonth] = ageRange.split(" - ").map((v) => parseInt(v.trim(), 10));
+                  return (
+                    <Panel
+                      header={
+                        <div className="panel-header">
+                          <span>Gói cho {formatMonthRange(minMonth, maxMonth)}</span>
+                          {childAge !== null && childAge >= minMonth && childAge <= maxMonth && (
+                            <Tag color="green">Khuyến nghị cho con bạn</Tag>
+                          )}
+                        </div>
+                      }
+                      key={ageRange}
+                    >
+                      {packagesInGroup.map((pkg) => (
+                        <Card
+                          key={pkg.packageId}
+                          className={`package-card ${selectedPackage.packageId === pkg.packageId ? "selected" : ""} ${
+                            isPackageAppropriateForChild(pkg) ? "recommended" : ""
+                          }`}
+                          title={
+                            <div className="card-title">
+                              <span>{pkg.packageName}</span>
+                              <Checkbox
+                                checked={selectedPackage.packageId === pkg.packageId}
+                                onChange={() => handlePackageSelect(pkg)}
+                              />
+                            </div>
+                          }
+                          extra={<span>{formatPrice(pkg.price)}</span>}
+                        >
+                          <p>{pkg.description}</p>
+                          {pkg.vaccines && pkg.vaccines.length > 0 ? (
+                            <Row gutter={[16, 16]}>
+                              {pkg.vaccines.map((vaccine) => (
+                                <Col xs={24} sm={12} md={8} key={vaccine.vaccineId}>
+                                  <Card className="vaccine-card">
+                                    <div className="vaccine-name">{vaccine.vaccineName}</div>
+                                    <div className="vaccine-info">{vaccine.description?.info}</div>
+                                    <div className="vaccine-price">{formatPrice(vaccine.price)}</div>
+                                  </Card>
+                                </Col>
+                              ))}
+                            </Row>
+                          ) : (
+                            <p>Không có vắc-xin</p>
+                          )}
+                        </Card>
+                      ))}
+                    </Panel>
+                  );
+                })}
+              </Collapse>
+            )}
+          </Form.Item>
+        </Col>
 
-          <Col xs={24} md={8}>
-            {renderSelectedPackageDetails()}
-            {renderTemporarySchedules()}
-          </Col>
-        </Row>
-      </div>
+        <Col xs={24} md={8}>
+          {renderSelectedPackageDetails()}
+          {renderTemporarySchedules()}
+        </Col>
+      </Row>
 
       <Modal
         title="Chọn vắc-xin thay thế"
@@ -534,47 +468,36 @@ const VaccinationPackageSection = () => {
         width={700}
       >
         {currentVaccine && (
-          <div className="current-vaccine-info mb-4 p-3 bg-gray-50 rounded">
-            <h4 className="font-medium">Vắc-xin hiện tại:</h4>
+          <div className="current-vaccine-info">
+            <h4>Vắc-xin hiện tại:</h4>
             <div>{currentVaccine.vaccineName}</div>
-            <div className="text-sm">
-              {currentVaccine.manufacturer?.name} ({currentVaccine.manufacturer?.countryCode})
+            <div>
+              {currentVaccine.manufacturers[0]?.name} ({currentVaccine.manufacturers[0]?.countryCode})
             </div>
-            <div className="text-blue-600">{formatPrice(currentVaccine.price)}</div>
+            <div className="price">{formatPrice(currentVaccine.price)}</div>
           </div>
         )}
 
         {alternativeVaccines.length === 0 ? (
-          <div className="text-center p-4">
-            <p>Không tìm thấy vắc-xin thay thế có cùng tên.</p>
-          </div>
+          <div className="no-alternatives">Không tìm thấy vắc-xin thay thế có cùng tên.</div>
         ) : (
           <Table
             dataSource={alternativeVaccines}
             rowKey="vaccineId"
             pagination={false}
             columns={[
-              {
-                title: "Vắc-xin",
-                dataIndex: "vaccineName",
-                key: "vaccineName",
-              },
+              { title: "Vắc-xin", dataIndex: "vaccineName", key: "vaccineName" },
               {
                 title: "Nhà sản xuất",
-                dataIndex: ["manufacturer", "name"],
+                dataIndex: ["manufacturers", 0, "name"],
                 key: "manufacturer",
                 render: (text, record) => (
                   <span>
-                    {text} ({record.manufacturer?.countryCode})
+                    {record.manufacturers[0]?.name} ({record.manufacturers[0]?.countryCode})
                   </span>
                 ),
               },
-              {
-                title: "Giá",
-                dataIndex: "price",
-                key: "price",
-                render: (price) => formatPrice(price),
-              },
+              { title: "Giá", dataIndex: "price", key: "price", render: formatPrice },
               {
                 title: "Hành động",
                 key: "action",
@@ -597,7 +520,7 @@ const VaccinationPackageSection = () => {
         confirmLoading={loading}
       >
         <p>Bạn có chắc chắn muốn đăng ký gói tiêm chủng này không?</p>
-        <div className="mt-3">
+        <div className="confirm-details">
           <div>
             <strong>Gói:</strong> {selectedPackage.packageName}
           </div>
@@ -613,7 +536,7 @@ const VaccinationPackageSection = () => {
           </div>
         </div>
       </Modal>
-    </>
+    </div>
   );
 };
 
