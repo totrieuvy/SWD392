@@ -171,7 +171,7 @@ const VaccineSection = () => {
                 >
                   {ageOptions.map((age, index) => (
                     <Option key={index} value={age}>
-                      {age} tuổi
+                      {age} tháng
                     </Option>
                   ))}
                 </Select>

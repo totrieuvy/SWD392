@@ -20,7 +20,7 @@ import api from "../../../config/axios";
 import { toast } from "react-toastify";
 
 function Batch() {
-  const [patchs, setPatchs] = useState([]);
+  const [batches, setBatches] = useState([]); // Đổi tên biến "patchs" thành "batches" cho đúng ngữ nghĩa
   const [vaccines, setVaccines] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState([]);
@@ -62,12 +62,12 @@ function Batch() {
     },
     {
       title: "Nhà sản xuất",
-      dataIndex: ["vaccine", "manufacturer", "name"],
+      dataIndex: ["vaccine", "manufacturers", 0, "name"], // Sửa từ "manufacturer" thành "manufacturers[0]"
       key: "manufacturerName",
     },
     {
       title: "Quốc gia",
-      dataIndex: ["vaccine", "manufacturer", "countryName"],
+      dataIndex: ["vaccine", "manufacturers", 0, "countryName"], // Sửa từ "manufacturer" thành "manufacturers[0]"
       key: "countryName",
     },
     {
@@ -145,6 +145,7 @@ function Batch() {
       fetchData();
     } catch (error) {
       console.error("Lỗi khi xóa batch:", error);
+      toast.error("Xóa batch thất bại");
     } finally {
       setLoading(false);
     }
@@ -173,7 +174,7 @@ function Batch() {
     try {
       setLoading(true);
       const responseBatch = await api.get("v1/batch");
-      setPatchs(responseBatch.data.data);
+      setBatches(responseBatch.data.data); // Đổi từ "patchs" thành "batches"
       setFilteredData(responseBatch.data.data);
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu batch:", error);
@@ -184,7 +185,7 @@ function Batch() {
 
   const fetchVaccines = async () => {
     try {
-      const responseVaccine = await api.get("v1/vaccine");
+      const responseVaccine = await api.get("v1/vaccine?pageIndex=1&pageSize=1000");
       setVaccines(responseVaccine.data.data);
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu vaccine:", error);
@@ -198,9 +199,9 @@ function Batch() {
 
   const handleSearch = () => {
     const keyword = searchText.toLowerCase();
-    const filtered = patchs.filter((item) => {
+    const filtered = batches.filter((item) => {
       const vaccineName = item.vaccine?.vaccineName?.toLowerCase() || "";
-      const manufacturerName = item.vaccine?.manufacturer?.name?.toLowerCase() || "";
+      const manufacturerName = item.vaccine?.manufacturers[0]?.name?.toLowerCase() || ""; // Sửa từ "manufacturer" thành "manufacturers[0]"
       return vaccineName.includes(keyword) || manufacturerName.includes(keyword);
     });
     setFilteredData(filtered);
@@ -233,17 +234,11 @@ function Batch() {
           toast.error("Không tìm thấy batch ID để cập nhật");
           return;
         }
-        await api.put(`v1/batch/${editingBatch.batchId}`, {
-          ...payload,
-          batchId: editingBatch.batchId,
-        });
+        await api.put(`v1/batch/${editingBatch.batchId}`, payload); // Không cần gửi batchId trong payload khi PUT
         toast.success("Cập nhật batch thành công");
       } else {
-        // For new batch, include batchId in the payload
-        await api.post("v1/batch", {
-          ...payload,
-          batchId: values.batchId || null, // Add batchId field for POST
-        });
+        payload.batchId = values.batchId; // Thêm batchId vào payload khi tạo mới
+        await api.post("v1/batch", payload);
         toast.success("Thêm mới batch thành công");
       }
 
@@ -300,8 +295,13 @@ function Batch() {
               }}
             />
           </Descriptions.Item>
-          <Descriptions.Item label="Nhà sản xuất">{batch.vaccine.manufacturer.name}</Descriptions.Item>
-          <Descriptions.Item label="Quốc gia">{batch.vaccine.manufacturer.countryName}</Descriptions.Item>
+          <Descriptions.Item label="Nhà sản xuất">
+            {batch.vaccine.manufacturers[0]?.name || "N/A"} {/* Sửa từ "manufacturer" thành "manufacturers[0]" */}
+          </Descriptions.Item>
+          <Descriptions.Item label="Quốc gia">
+            {batch.vaccine.manufacturers[0]?.countryName || "N/A"}{" "}
+            {/* Sửa từ "manufacturer" thành "manufacturers[0]" */}
+          </Descriptions.Item>
           <Descriptions.Item label="Giá">
             {batch.vaccine.price.toLocaleString("vi-VN", {
               style: "currency",

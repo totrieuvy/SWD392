@@ -4,7 +4,8 @@ import VaccinationPackageSection from "./VaccinationPackageSection/VaccinationPa
 import SingleVaccinationSection from "./SingleInjectionSection/SingleVaccinationSection";
 
 export default function ServiceSection() {
-  const [serviceType, setServiceType] = useState(null);
+  // Khởi tạo serviceType với giá trị mặc định là "Vaccination Package"
+  const [serviceType, setServiceType] = useState("Vaccination Package");
 
   const handleServiceTypeChange = (value) => {
     setServiceType(value);
@@ -47,6 +48,7 @@ export default function ServiceSection() {
                     block
                     style={{ width: "100%" }}
                     onChange={handleServiceTypeChange}
+                    value={serviceType} // Đồng bộ giá trị với state
                   />
                 </Form.Item>
               </Col>

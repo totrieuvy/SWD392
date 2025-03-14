@@ -1,4 +1,19 @@
-import { Table, Tag, Input, Button, Modal, Image, Form, InputNumber, Select, Upload, Popconfirm, Col, Row } from "antd";
+import {
+  Table,
+  Tag,
+  Input,
+  Button,
+  Modal,
+  Image,
+  Form,
+  InputNumber,
+  Select,
+  Upload,
+  Popconfirm,
+  Col,
+  Row,
+  Descriptions,
+} from "antd";
 import { useEffect, useState } from "react";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import api from "../../../config/axios";
@@ -88,32 +103,32 @@ function Vaccine() {
 
   const columns = [
     {
-      title: "Vaccine Name",
+      title: "Tên Vaccine",
       dataIndex: "vaccineName",
       key: "vaccineName",
       sorter: (a, b) => a.vaccineName.localeCompare(b.vaccineName),
     },
     {
-      title: "Image",
+      title: "Hình ảnh",
       dataIndex: "image",
       key: "image",
       render: (text) => <Image src={text} alt="Vaccine" className="vaccine-image" />,
     },
     {
-      title: "Manufacturer",
+      title: "Nhà cung cấp",
       dataIndex: ["manufacturers", 0, "name"],
       key: "manufacturer",
       sorter: (a, b) => a.manufacturers[0].name.localeCompare(b.manufacturers[0].name),
     },
     {
-      title: "Price",
+      title: "Giá",
       dataIndex: "price",
       key: "price",
       render: (price) => formatVND(price),
       sorter: (a, b) => a.price - b.price,
     },
     {
-      title: "Status",
+      title: "Trạng thái",
       dataIndex: "isActive",
       key: "isActive",
       render: (isActive) => <Tag color={isActive ? "green" : "red"}>{isActive ? "Active" : "Inactive"}</Tag>,
@@ -124,13 +139,13 @@ function Vaccine() {
       onFilter: (value, record) => record.isActive === value,
     },
     {
-      title: "Actions",
+      title: "Hành động",
       dataIndex: "vaccineId",
       key: "vaccineId",
       render: (vaccineId, record) => (
         <div className="action-buttons">
           <Button className="detail-btn" onClick={() => handleDetail(record)}>
-            Detail
+            Chi tiết
           </Button>
           <Button
             className="edit-btn"
@@ -146,14 +161,14 @@ function Vaccine() {
               }
             }}
           >
-            Edit
+            Chỉnh sửa
           </Button>
           <Popconfirm
             title="Delete Vaccine"
             description="Are you sure you want to delete this vaccine?"
             onConfirm={() => handleDelete(vaccineId)}
           >
-            <Button className="delete-btn">Delete</Button>
+            <Button className="delete-btn">Xóa</Button>
           </Popconfirm>
         </div>
       ),
@@ -425,44 +440,54 @@ function Vaccine() {
         </Form>
       </Modal>
 
-      <Modal open={detailOpen} title="Vaccine Details" onCancel={handleCloseDetail} footer={null} width={600}>
+      {/* Phần hiển thị chi tiết đã chỉnh sửa */}
+      <Modal
+        title="Chi tiết Vaccine"
+        open={detailOpen}
+        onCancel={handleCloseDetail}
+        footer={[
+          <Button key="close" onClick={handleCloseDetail}>
+            Đóng
+          </Button>,
+        ]}
+        width={600}
+        className="vaccine-detail"
+      >
         {selectedVaccine && (
-          <div className="detail-content">
-            <p>
-              <strong>Name:</strong> {selectedVaccine.vaccineName}
-            </p>
-            <p>
-              <strong>Manufacturer:</strong> {selectedVaccine.manufacturers[0]?.name || "N/A"}
-            </p>
-            <p>
-              <strong>Price:</strong> {formatVND(selectedVaccine.price)}
-            </p>
-            <p>
-              <strong>Status:</strong> {selectedVaccine.isActive ? "Active" : "Inactive"}
-            </p>
-            <p>
-              <strong>Info:</strong> {selectedVaccine.description?.info}
-            </p>
-            <p>
-              <strong>Targeted Patients:</strong> {selectedVaccine.description?.targetedPatient}
-            </p>
-            <p>
-              <strong>Injection Schedule:</strong> {selectedVaccine.description?.injectionSchedule}
-            </p>
-            <p>
-              <strong>Reaction:</strong> {selectedVaccine.description?.vaccineReaction}
-            </p>
-            <p>
-              <strong>Age Range:</strong> {selectedVaccine.minAge} - {selectedVaccine.maxAge} months
-            </p>
-            <p>
-              <strong>Doses:</strong> {selectedVaccine.numberDose}
-            </p>
-            <p>
-              <strong>Duration:</strong> {selectedVaccine.duration} days
-            </p>
-            <Image src={selectedVaccine.image} alt="Vaccine" className="detail-image" />
-          </div>
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Vaccine ID">{selectedVaccine.vaccineId}</Descriptions.Item>
+            <Descriptions.Item label="Tên Vaccine">{selectedVaccine.vaccineName}</Descriptions.Item>
+            <Descriptions.Item label="Hình ảnh">
+              <Image
+                src={selectedVaccine.image}
+                alt="vaccine"
+                style={{
+                  maxWidth: 200,
+                  objectFit: "cover",
+                  borderRadius: "10px",
+                }}
+              />
+            </Descriptions.Item>
+            <Descriptions.Item label="Nhà sản xuất">
+              {selectedVaccine.manufacturers[0]?.name || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Quốc gia">
+              {selectedVaccine.manufacturers[0]?.countryName || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Giá">{formatVND(selectedVaccine.price)}</Descriptions.Item>
+            <Descriptions.Item label="Thông tin">{selectedVaccine.description?.info}</Descriptions.Item>
+            <Descriptions.Item label="Đối tượng">{selectedVaccine.description?.targetedPatient}</Descriptions.Item>
+            <Descriptions.Item label="Lịch tiêm">{selectedVaccine.description?.injectionSchedule}</Descriptions.Item>
+            <Descriptions.Item label="Phản ứng">{selectedVaccine.description?.vaccineReaction}</Descriptions.Item>
+            <Descriptions.Item label="Độ tuổi">
+              {selectedVaccine.minAge} - {selectedVaccine.maxAge} tháng
+            </Descriptions.Item>
+            <Descriptions.Item label="Số liều">{selectedVaccine.numberDose}</Descriptions.Item>
+            <Descriptions.Item label="Khoảng cách tiêm giữa các mũi">{selectedVaccine.duration} ngày</Descriptions.Item>
+            <Descriptions.Item label="Trạng thái">
+              {selectedVaccine.isActive ? "Đang hoạt động" : "Không hoạt động"}
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Modal>
 

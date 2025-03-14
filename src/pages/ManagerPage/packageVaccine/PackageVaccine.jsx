@@ -38,13 +38,13 @@ function PackageVaccine() {
       render: (discount) => `${discount}%`,
     },
     {
-      title: "Tuổi Tối Thiểu",
+      title: "Tháng Tối Thiểu",
       dataIndex: "minAge",
       key: "minAge",
       render: (minAge) => (minAge !== null ? minAge : "N/A"),
     },
     {
-      title: "Tuổi Tối Đa",
+      title: "Tháng Tối Đa",
       dataIndex: "maxAge",
       key: "maxAge",
       render: (maxAge) => (maxAge !== null ? maxAge : "N/A"),
@@ -62,7 +62,7 @@ function PackageVaccine() {
       render: (packageId, record) => (
         <div style={{ display: "flex", gap: "5px" }}>
           <Button type="default" onClick={() => showDetail(record)}>
-            Detail
+            Chi tiết
           </Button>
           <Button
             type="primary"
@@ -73,7 +73,7 @@ function PackageVaccine() {
               setOpen(true);
             }}
           >
-            Edit
+            Chỉnh sửa
           </Button>
           <Popconfirm
             title="Delete package vaccine"
@@ -83,7 +83,7 @@ function PackageVaccine() {
             onConfirm={() => handleDelete(packageId)}
           >
             <Button type="primary" danger>
-              Delete
+              Xóa
             </Button>
           </Popconfirm>
         </div>
@@ -104,7 +104,7 @@ function PackageVaccine() {
   const fetchData = async () => {
     try {
       const response = await api.get("/v1/package");
-      const responseVaccine = await api.get("/v1/vaccine");
+      const responseVaccine = await api.get("/v1/vaccine?pageIndex=1&pageSize=1000");
       setVaccineList(responseVaccine.data.data.filter((vaccine) => vaccine.isActive));
       const sortedData = response.data.data.sort((a, b) => Number(b.isActive) - Number(a.isActive));
       setPackageVaccine(sortedData);
@@ -190,7 +190,7 @@ function PackageVaccine() {
 
   return (
     <div className="PackageVaccine">
-      <h1>Danh sách combo</h1>
+      <h1>Quản lí package</h1>
       <div className="Vaccine__above">
         <div style={{ marginBottom: 16, display: "flex", gap: "10px" }}>
           <Input
@@ -314,10 +314,10 @@ function PackageVaccine() {
                 <strong>Giảm giá:</strong> {selectedPackage.discount}%
               </p>
               <p>
-                <strong>Tuổi tối thiểu:</strong> {selectedPackage.minAge ?? "N/A"}
+                <strong>Tháng tối thiểu:</strong> {selectedPackage.minAge ?? "N/A"}
               </p>
               <p>
-                <strong>Tuổi tối đa:</strong> {selectedPackage.maxAge ?? "N/A"}
+                <strong>Tháng tối đa:</strong> {selectedPackage.maxAge ?? "N/A"}
               </p>
               <p>
                 <strong>Trạng thái:</strong>
@@ -345,7 +345,8 @@ function PackageVaccine() {
                         <strong>Tên Vaccine:</strong> {vaccine.vaccineName}
                       </p>
                       <p>
-                        <strong>Nhà sản xuất:</strong> {vaccine.manufacturer.name} ({vaccine.manufacturer.countryName})
+                        <strong>Nhà sản xuất:</strong> {vaccine.manufacturers[0].name} (
+                        {vaccine.manufacturers[0].countryName})
                       </p>
                       <p>
                         <strong>Lịch tiêm:</strong> {vaccine.description.injectionSchedule}

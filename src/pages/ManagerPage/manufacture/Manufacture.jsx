@@ -162,23 +162,23 @@ function Manufacture() {
 
   return (
     <div className="Manufacture">
-      <h1>List of manufactures</h1>
+      <h1>Quản lí nhà cung cấp</h1>
       <div className="Staff__above">
         <div style={{ marginBottom: 16, display: "flex", gap: "10px" }}>
           <Input
-            placeholder="Search by Manufacture Name"
+            placeholder="Nhập tên nhà cung cấp"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 250 }}
           />
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-            Search
+            Tìm kiếm
           </Button>
         </div>
 
         <div>
           <Button type="primary" onClick={handleOpenModal}>
-            Add new manufacture
+            Thêm nhà cung cấp mới
           </Button>
         </div>
       </div>

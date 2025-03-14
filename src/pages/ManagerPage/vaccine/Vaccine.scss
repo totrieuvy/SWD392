@@ -4,6 +4,16 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
+  .vaccine-detail {
+    .ant-descriptions-item-label {
+      font-weight: 500;
+      color: #1a73e8; // Màu giống nhãn trong form
+    }
+    .ant-descriptions-item-content {
+      color: #333;
+    }
+  }
+
   h1 {
     margin-bottom: 24px;
     color: #1a73e8;

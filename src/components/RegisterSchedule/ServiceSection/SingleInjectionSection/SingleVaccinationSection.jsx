@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Form, Row, Col, Checkbox, DatePicker, message, Space, Tag, List, Typography, Empty, Pagination } from "antd";
+import { Form, Row, Col, Checkbox, DatePicker, message, Space, Tag, List, Typography, Empty } from "antd";
 import api from "../../../../config/axios";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
@@ -37,26 +37,18 @@ const VaccinationSection = () => {
     return dayjs().diff(dob, "month", true); // Lấy tuổi theo tháng với độ chính xác thập phân
   }
 
-  const fetchVaccines = async (page = 1) => {
+  const fetchVaccines = async () => {
     if (!childId) return;
 
     try {
       setLoading(true);
-      // Đảm bảo pageIndex ít nhất là 1
-      const pageIndex = Math.max(1, page);
-
-      const response = await api.get("v1/vaccine?pageIndex=1&pageSize=10000", {
-        params: {
-          pageIndex: pageIndex,
-        },
-      });
+      const response = await api.get("v1/vaccine?pageIndex=1&pageSize=10000");
 
       if (response.data && response.data.data) {
-        // Lọc vắc-xin với phạm vi tuổi hợp lệ (đổi từ năm sang tháng)
+        // Lọc vắc-xin với phạm vi tuổi hợp lệ (0-96 tháng)
         const validVaccines = response.data.data.filter(
           (vaccine) => vaccine.minAge !== null && vaccine.maxAge !== null && vaccine.minAge >= 0 && vaccine.maxAge <= 96
         );
-
         setVaccines(validVaccines);
       }
     } catch (error) {
@@ -68,18 +60,14 @@ const VaccinationSection = () => {
   };
 
   useEffect(() => {
-    fetchVaccines(1); // Đặt lại về trang 1 khi thay đổi thông tin trẻ
-
-    // Đặt lại các lựa chọn khi thay đổi thông tin trẻ
+    fetchVaccines();
     setSelectedVaccines([]);
     setVaccinationDate(null);
     setScheduledVaccines([]);
     setTemporarySchedules([]);
 
-    // Mở rộng các nhóm tuổi có liên quan đến tuổi của trẻ
     if (childAge !== null) {
       const relevantGroups = {};
-      // Mở rộng các nhóm liên quan đến tuổi của trẻ
       Object.keys(groupVaccinesByAge()).forEach((ageRange) => {
         const [minAge, maxAge] = ageRange.split(" - ").map((age) => parseFloat(age));
         if (childAge >= minAge && childAge <= maxAge) {
@@ -91,15 +79,9 @@ const VaccinationSection = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [childId]);
 
-  const handlePageChange = (page) => {
-    fetchVaccines(page);
-  };
-
   const handleCheckboxChange = (vaccineId) => {
     setSelectedVaccines((prev) => {
       const newSelection = prev.includes(vaccineId) ? prev.filter((id) => id !== vaccineId) : [...prev, vaccineId];
-
-      // Xóa lịch trình tạm thời khi thay đổi lựa chọn
       setTemporarySchedules([]);
       return newSelection;
     });
@@ -109,13 +91,11 @@ const VaccinationSection = () => {
     const formattedDate = date ? date.format("YYYY-MM-DD") : null;
     setVaccinationDate(formattedDate);
 
-    // Xóa lịch trình tạm thời nếu ngày được xóa
     if (!formattedDate) {
       setTemporarySchedules([]);
       return;
     }
 
-    // Chỉ tải lịch trình tạm thời nếu đã chọn vắc-xin
     if (selectedVaccines.length === 0) {
       message.warning("Vui lòng chọn ít nhất một vắc-xin trước");
       return;
@@ -125,21 +105,11 @@ const VaccinationSection = () => {
   };
 
   const fetchTemporarySchedules = async (date) => {
-    if (!childId || selectedVaccines.length === 0 || !date) {
-      return;
-    }
+    if (!childId || selectedVaccines.length === 0 || !date) return;
 
     try {
       setDateSelectionLoading(true);
-
-      // Tạo payload cho yêu cầu
-      const scheduleRequest = {
-        vaccineIds: selectedVaccines,
-        childId: childId,
-        startDate: date,
-      };
-
-      // Gọi API để lấy lịch trình tạm thời
+      const scheduleRequest = { vaccineIds: selectedVaccines, childId, startDate: date };
       const response = await api.post("schedule", [scheduleRequest]);
 
       if (response.data && response.data.code === "Success") {
@@ -156,18 +126,14 @@ const VaccinationSection = () => {
     }
   };
 
-  // Tính tổng giá của các vắc-xin đã chọn
   const calculateTotal = () => {
-    const total = vaccines
+    return vaccines
       .filter((vaccine) => selectedVaccines.includes(vaccine.vaccineId))
-      .reduce((sum, vaccine) => sum + vaccine.price, 0);
-
-    return total;
+      .reduce((sum, vaccine) => sum + (vaccine.price || 0), 0);
   };
 
   const formatDateForAPI = (dateString) => {
     if (!dateString) return "";
-    // Chuyển từ YYYY-MM-DD sang DD-MM-YYYY
     const date = dayjs(dateString);
     return date.format("DD-MM-YYYY");
   };
@@ -177,17 +143,14 @@ const VaccinationSection = () => {
       message.error("Chưa chọn trẻ. Vui lòng chọn trẻ trước.");
       return;
     }
-
     if (!userId) {
       message.error("Thông tin người dùng không khả dụng. Vui lòng đăng nhập lại.");
       return;
     }
-
     if (selectedVaccines.length === 0) {
       message.warning("Vui lòng chọn ít nhất một vắc-xin");
       return;
     }
-
     if (!vaccinationDate) {
       message.warning("Vui lòng chọn ngày tiêm chủng");
       return;
@@ -195,14 +158,10 @@ const VaccinationSection = () => {
 
     try {
       setLoading(true);
-
-      // Định dạng ngày thành DD-MM-YYYY cho API đặt hàng
       const formattedInjectionDate = formatDateForAPI(vaccinationDate);
-
-      // 1. Trước tiên tạo đơn hàng sử dụng định dạng API mới
       const orderPayload = {
-        userId: userId,
-        childId: childId,
+        userId,
+        childId,
         fullName: childName,
         dob: childDob,
         gender: childGender,
@@ -213,36 +172,22 @@ const VaccinationSection = () => {
       };
 
       console.log("Payload đơn hàng:", orderPayload);
-      // Gọi API đặt hàng
       const orderResponse = await api.post("order", orderPayload);
 
       if (orderResponse.data && orderResponse.data.code === "Success") {
         message.success("Đã tạo đơn hàng tiêm chủng thành công");
-
-        // Xử lý chuyển hướng đến URL thanh toán nếu có trong phản hồi
         if (orderResponse.data.data) {
-          // Chuyển hướng đến URL thanh toán
           window.location.href = orderResponse.data.data;
-          return; // Thoát sớm vì chúng ta đang chuyển hướng
+          return;
         }
 
-        // Nếu không có URL thanh toán, tiếp tục với việc tạo lịch trình
-        // 2. Sau đó tạo lịch trình như trước (sử dụng định dạng YYYY-MM-DD ban đầu)
-        const scheduleRequest = {
-          vaccineIds: selectedVaccines,
-          childId: childId,
-          startDate: vaccinationDate, // Giữ định dạng ban đầu cho API lịch trình
-        };
-
+        const scheduleRequest = { vaccineIds: selectedVaccines, childId, startDate: vaccinationDate };
         const scheduleResponse = await api.post("schedule", [scheduleRequest]);
 
         if (scheduleResponse.data && scheduleResponse.data.code === "Success") {
           message.success("Đã tạo lịch tiêm chủng thành công");
-          // Cập nhật danh sách lịch trình đã đặt
           setScheduledVaccines(scheduleResponse.data.data || []);
-          // Xóa lịch trình tạm thời sau khi xác nhận
           setTemporarySchedules([]);
-          // Xóa các vắc-xin đã chọn sau khi gửi thành công
           setSelectedVaccines([]);
           setVaccinationDate(null);
         } else {
@@ -259,23 +204,17 @@ const VaccinationSection = () => {
     }
   };
 
-  // Nhóm vắc-xin theo phạm vi tuổi (tháng)
   const groupVaccinesByAge = () => {
     return vaccines.reduce((groups, vaccine) => {
       const ageGroup = `${vaccine.minAge} - ${vaccine.maxAge}`;
-      if (!groups[ageGroup]) {
-        groups[ageGroup] = [];
-      }
+      if (!groups[ageGroup]) groups[ageGroup] = [];
       groups[ageGroup].push(vaccine);
       return groups;
     }, {});
   };
 
-  // Lấy nhóm vắc-xin với bộ lọc dựa trên tuổi của trẻ nếu có
   const getVaccineGroups = () => {
     const vaccineGroups = groupVaccinesByAge();
-
-    // Sắp xếp các nhóm theo minAge
     return Object.entries(vaccineGroups).sort((a, b) => {
       const minAgeA = parseFloat(a[0].split(" - ")[0].trim());
       const minAgeB = parseFloat(b[0].split(" - ")[0].trim());
@@ -283,58 +222,38 @@ const VaccinationSection = () => {
     });
   };
 
-  // Chuyển đổi mở rộng nhóm
   const toggleGroup = (ageGroup) => {
-    setExpandedGroups((prev) => ({
-      ...prev,
-      [ageGroup]: !prev[ageGroup],
-    }));
+    setExpandedGroups((prev) => ({ ...prev, [ageGroup]: !prev[ageGroup] }));
   };
 
-  // Định dạng tổng giá để hiển thị
   const formatTotalPrice = () => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    }).format(calculateTotal());
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(
+      calculateTotal()
+    );
   };
 
-  // Lấy chi tiết vắc-xin đã chọn để hiển thị
   const getSelectedVaccineDetails = () => {
     return vaccines.filter((vaccine) => selectedVaccines.includes(vaccine.vaccineId));
   };
 
-  // Lấy giá trị chuỗi an toàn từ đối tượng có thể lồng nhau hoặc trả về giá trị mặc định
-  const getNestedStringValue = (obj, path, fallback = "Không xác định") => {
-    if (!obj) return fallback;
-
-    // Xử lý đường dẫn chuỗi như "description.info"
-    if (typeof path === "string") {
-      const keys = path.split(".");
-      let result = obj;
-
-      for (const key of keys) {
-        if (result === null || result === undefined || typeof result !== "object") {
-          return fallback;
-        }
-        result = result[key];
-      }
-
-      // Trả về kết quả nếu là giá trị nguyên thủy, nếu không sử dụng giá trị mặc định
-      return result === null || result === undefined || typeof result === "object" ? fallback : String(result);
+  const getManufacturerInfo = (vaccine, field) => {
+    const manufacturer = vaccine.manufacturers && vaccine.manufacturers[0];
+    if (!manufacturer) return "Không xác định";
+    switch (field) {
+      case "name":
+        return manufacturer.name || "Không xác định";
+      case "countryName":
+        return manufacturer.countryName || "Không xác định";
+      default:
+        return "Không xác định";
     }
-
-    return fallback;
   };
 
-  // Hiển thị thẻ phù hợp với độ tuổi nếu vắc-xin phù hợp với tuổi của trẻ
   const isVaccineAppropriateForChild = (vaccine) => {
     if (childAge === null) return false;
     return childAge >= vaccine.minAge && childAge <= vaccine.maxAge;
   };
 
-  // Chuyển đổi tháng sang định dạng hiển thị
   const formatMonthRangeToDisplay = (minMonth, maxMonth) => {
     if (minMonth === 0 && maxMonth < 12) {
       return `${maxMonth} tháng đầu`;
@@ -343,7 +262,6 @@ const VaccinationSection = () => {
     }
   };
 
-  // Hiển thị vắc-xin với checkbox
   const renderVaccineCard = (vaccine) => (
     <Col xs={24} sm={12} md={8} lg={8} key={vaccine.vaccineId}>
       <div className={`vaccine-card ${isVaccineAppropriateForChild(vaccine) ? "vaccine-card--appropriate" : ""}`}>
@@ -354,16 +272,17 @@ const VaccinationSection = () => {
             checked={selectedVaccines.includes(vaccine.vaccineId)}
             onChange={() => handleCheckboxChange(vaccine.vaccineId)}
           >
-            <div className="vaccine-card__title">{vaccine.vaccineName}</div>
+            <div className="vaccine-card__title">
+              {vaccine.vaccineName} ({getManufacturerInfo(vaccine, "name")})
+            </div>
             {isVaccineAppropriateForChild(vaccine) && (
               <Tag color="green" className="vaccine-card__appropriate-tag">
                 Phù hợp với độ tuổi trẻ
               </Tag>
             )}
-            <div className="vaccine-card__description">{getNestedStringValue(vaccine, "description.info")}</div>
+            <div className="vaccine-card__description">{vaccine.description?.info || "Không có thông tin"}</div>
             <div className="vaccine-card__origin">
-              Nguồn gốc: {getNestedStringValue(vaccine, "manufacturer.name")}(
-              {getNestedStringValue(vaccine, "manufacturer.countryCode")})
+              Nguồn gốc: {getManufacturerInfo(vaccine, "name")} ({getManufacturerInfo(vaccine, "countryName")})
             </div>
             <div className="vaccine-card__price">{new Intl.NumberFormat("vi-VN").format(vaccine.price)} đ</div>
           </Checkbox>
@@ -372,14 +291,12 @@ const VaccinationSection = () => {
     </Col>
   );
 
-  // Hiển thị danh sách vắc-xin đã chọn ở bên phải
   const renderSelectedVaccinesList = () => {
     const selectedVaccineDetails = getSelectedVaccineDetails();
 
     return (
       <div className="selected-vaccines">
         <div className="selected-vaccines__header">DANH SÁCH VẮC XIN CHỌN MUA</div>
-
         {childName && <div className="selected-vaccines__child-name">Trẻ: {childName}</div>}
         {childAge !== null && <div className="selected-vaccines__child-age">Tuổi: {childAge.toFixed(1)} tháng</div>}
 
@@ -392,10 +309,12 @@ const VaccinationSection = () => {
                 <div key={vaccine.vaccineId} className="selected-vaccines__item">
                   <div className="selected-vaccines__item-header">
                     <div>
-                      <div className="selected-vaccines__item-title">{vaccine.vaccineName}</div>
+                      <div className="selected-vaccines__item-title">
+                        {vaccine.vaccineName} ({getManufacturerInfo(vaccine, "name")})
+                      </div>
                       <div className="selected-vaccines__item-origin">
-                        Nguồn gốc: {getNestedStringValue(vaccine, "manufacturer.name")}(
-                        {getNestedStringValue(vaccine, "manufacturer.countryCode")})
+                        Nguồn gốc: {getManufacturerInfo(vaccine, "name")} ({getManufacturerInfo(vaccine, "countryName")}
+                        )
                       </div>
                     </div>
                     <button
@@ -411,7 +330,6 @@ const VaccinationSection = () => {
                 </div>
               ))}
             </div>
-
             <div className="selected-vaccines__date-picker">
               <label className="selected-vaccines__date-label">Ngày bắt đầu chích:</label>
               <DatePicker
@@ -425,12 +343,10 @@ const VaccinationSection = () => {
                 <div className="selected-vaccines__loading">Đang tải xem trước lịch trình...</div>
               )}
             </div>
-
             <div className="selected-vaccines__total">
               <span className="selected-vaccines__total-label">Tổng cộng:</span>
               <span className="selected-vaccines__total-amount">{formatTotalPrice()}</span>
             </div>
-
             <button
               className="selected-vaccines__button"
               onClick={submitSchedule}
@@ -444,15 +360,11 @@ const VaccinationSection = () => {
     );
   };
 
-  // Hiển thị xem trước lịch trình tạm thời
   const renderTemporarySchedules = () => {
     if (temporarySchedules.length === 0) return null;
 
-    // Nhóm lịch trình tạm thời theo loại vắc-xin
     const groupedByType = temporarySchedules.reduce((acc, schedule) => {
-      if (!acc[schedule.vaccineType]) {
-        acc[schedule.vaccineType] = [];
-      }
+      if (!acc[schedule.vaccineType]) acc[schedule.vaccineType] = [];
       acc[schedule.vaccineType].push(schedule);
       return acc;
     }, {});
@@ -463,7 +375,6 @@ const VaccinationSection = () => {
         <div className="temporary-schedules__note">
           Lịch trình bên dưới là dự kiến. Nhấn ĐĂNG KÝ MŨI TIÊM để xác nhận.
         </div>
-
         {Object.entries(groupedByType).map(([vaccineType, schedules]) => (
           <div key={vaccineType} className="temporary-schedules__type-group">
             <Title level={5} className="temporary-schedules__type-title">
@@ -493,15 +404,11 @@ const VaccinationSection = () => {
     );
   };
 
-  // Hiển thị vắc-xin đã lên lịch với phân nhóm rõ ràng theo loại vắc-xin
   const renderScheduledVaccines = () => {
     if (scheduledVaccines.length === 0) return null;
 
-    // Nhóm vắc-xin đã lên lịch theo loại
     const groupedByType = scheduledVaccines.reduce((acc, vaccine) => {
-      if (!acc[vaccine.vaccineType]) {
-        acc[vaccine.vaccineType] = [];
-      }
+      if (!acc[vaccine.vaccineType]) acc[vaccine.vaccineType] = [];
       acc[vaccine.vaccineType].push(vaccine);
       return acc;
     }, {});
@@ -509,7 +416,6 @@ const VaccinationSection = () => {
     return (
       <div className="scheduled-vaccines">
         <div className="scheduled-vaccines__header">Lịch Tiêm Chủng Đã Đăng Ký</div>
-
         {Object.entries(groupedByType).map(([vaccineType, vaccines]) => (
           <div key={vaccineType} className="scheduled-vaccines__type-group">
             <Title level={5} className="scheduled-vaccines__type-title">
@@ -569,7 +475,6 @@ const VaccinationSection = () => {
                     </p>
                   </div>
                 )}
-
                 {getVaccineGroups().map(([ageRange, vaccinesInGroup]) => {
                   const [minAge, maxAge] = ageRange.split(" - ").map(parseFloat);
                   const displayRange = formatMonthRangeToDisplay(minAge, maxAge);
@@ -601,7 +506,6 @@ const VaccinationSection = () => {
             )}
           </Form.Item>
         </Col>
-
         <Col xs={24} md={8} className="vaccines-sidebar">
           <div className="sidebar-content">
             {renderSelectedVaccinesList()}
