@@ -28,6 +28,7 @@ import StaffPage from "./pages/StaffPage/StaffPage";
 import DoctorPage from "./pages/DoctorPage/DoctorPage";
 import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
 import ResetPassword from "./pages/CustomerPage/resetPassword/ResetPassword";
+import MedicalRecord from "./pages/CustomerPage/MedicalRecord/MedicalRecord";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -72,6 +73,10 @@ const App = () => {
         {
           path: "children-profile",
           element: <ChildrenProfile />,
+        },
+        {
+          path: "medical-records",
+          element: <MedicalRecord />,
         },
         {
           path: "about-us",

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import api from "../../../config/axios";
@@ -7,11 +8,11 @@ import "./ChildrenProfile.scss";
 function ChildrenProfile() {
   const [children, setChildren] = useState([]);
   const [childDetails, setChildDetails] = useState(null);
+  const [vaccines, setVaccines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Redux
   const dispatch = useDispatch();
   const userId = useSelector((state) => state.user?.userId);
   const userName = useSelector((state) => state.user?.userName);
@@ -21,8 +22,8 @@ function ChildrenProfile() {
     document.title = "Thông tin trẻ em";
     if (userId) {
       fetchChildren();
+      fetchVaccines();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   useEffect(() => {
@@ -35,10 +36,8 @@ function ChildrenProfile() {
     try {
       setLoading(true);
       const response = await api.get(`user/${userId}`);
-
       if (response.data.statusCode === 200 && response.data.data.listChildRes) {
         setChildren(response.data.data.listChildRes);
-
         if (response.data.data.listChildRes.length > 0 && !selectedChild) {
           dispatch(setSelectedChild(response.data.data.listChildRes[0]));
         }
@@ -56,7 +55,6 @@ function ChildrenProfile() {
     try {
       setDetailsLoading(true);
       const response = await api.get(`user/child/${childId}`);
-
       if (response.data.statusCode === 200) {
         setChildDetails(response.data.data);
       } else {
@@ -69,8 +67,72 @@ function ChildrenProfile() {
     }
   };
 
+  const fetchVaccines = async () => {
+    try {
+      const response = await api.get("v1/vaccine?pageIndex=1&pageSize=1000");
+      if (response.data.statusCode === 200) {
+        setVaccines(response.data.data);
+      } else {
+        setError("Không thể lấy danh sách vaccine");
+      }
+    } catch (err) {
+      setError(err.message || "Đã xảy ra lỗi khi lấy danh sách vaccine");
+    }
+  };
+
   const handleSelectChild = (child) => {
     dispatch(setSelectedChild(child));
+  };
+
+  const ageRanges = [
+    { min: 0, max: 12 },
+    { min: 12, max: 24 },
+    { min: 24, max: 36 },
+    { min: 36, max: 48 },
+    { min: 48, max: 60 },
+    { min: 60, max: 72 },
+    { min: 72, max: 84 },
+    { min: 84, max: 96 },
+  ];
+
+  // Hàm parse chuỗi ngày từ định dạng ISO hoặc custom
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    return new Date(dateString); // Parse ISO format directly
+  };
+
+  // Hàm kiểm tra trạng thái tiêm cho từng vaccine
+  const getVaccinationStatus = (vaccineName) => {
+    if (!childDetails?.vaccinatedInformation || !vaccines.length) return null;
+
+    const vaccineInfo = vaccines.find((v) => v.vaccineName === vaccineName);
+    if (!vaccineInfo) return null;
+
+    const vaccinatedCount = childDetails.vaccinatedInformation.filter((v) => v.vaccineName === vaccineName).length;
+    const requiredDoses = vaccineInfo.numberDose;
+
+    if (vaccinatedCount === 0) {
+      return { status: "Chưa tiêm", doses: `(${requiredDoses} liều)` };
+    } else if (vaccinatedCount < requiredDoses) {
+      const vaccinatedDates = childDetails.vaccinatedInformation
+        .filter((v) => v.vaccineName === vaccineName)
+        .map((v) => parseDate(v.actualDate).toLocaleDateString("vi-VN"))
+        .join(", ");
+      return {
+        status: `Đã tiêm ${vaccinatedCount}/${requiredDoses}`,
+        dates: vaccinatedDates,
+        remaining: `Chưa tiêm (${requiredDoses - vaccinatedCount} liều)`,
+      };
+    } else {
+      const vaccinatedDates = childDetails.vaccinatedInformation
+        .filter((v) => v.vaccineName === vaccineName)
+        .map((v) => parseDate(v.actualDate).toLocaleDateString("vi-VN"))
+        .join(", ");
+      return {
+        status: "Đã tiêm đủ",
+        dates: vaccinatedDates,
+      };
+    }
   };
 
   if (!userId) return <div>Vui lòng đăng nhập để xem thông tin</div>;
@@ -124,16 +186,16 @@ function ChildrenProfile() {
             ) : (
               <div className="details-card">
                 <p>
-                  <span>Họ và tên:</span> {childDetails?.fullName || selectedChild.fullName}
+                  <span>Họ và tên:</span> {childDetails?.data?.fullName || selectedChild.fullName}
                 </p>
                 <p>
-                  <span>Ngày sinh:</span> {childDetails?.dob || selectedChild.dob}
+                  <span>Ngày sinh:</span> {childDetails?.data?.dob || selectedChild.dob}
                 </p>
                 <p>
-                  <span>Giới tính:</span> {(childDetails?.gender || selectedChild.gender) === "male" ? "Nam" : "Nữ"}
+                  <span>Giới tính:</span> {childDetails?.data?.gender === "male" ? "Nam" : "Nữ"}
                 </p>
                 <p>
-                  <span>Địa chỉ:</span> {childDetails?.address || selectedChild.address || "Chưa cập nhật"}
+                  <span>Địa chỉ:</span> {childDetails?.data?.address || selectedChild.address || "Chưa cập nhật"}
                 </p>
               </div>
             )}
@@ -144,29 +206,58 @@ function ChildrenProfile() {
               <h3>Thông tin tiêm chủng</h3>
               {detailsLoading ? (
                 <div className="details-loading">Đang tải thông tin tiêm chủng...</div>
-              ) : childDetails.vaccinatedInformation && childDetails.vaccinatedInformation.length > 0 ? (
-                <div className="vaccination-grid">
-                  {childDetails.vaccinatedInformation.map((vaccine, index) => (
-                    <div key={index} className={`vaccine-card ${vaccine.isVaccinated ? "vaccinated" : "pending"}`}>
-                      <div className="vaccine-status-indicator">{vaccine.isVaccinated ? "Đã tiêm" : "Chưa tiêm"}</div>
-                      <h4 className="vaccine-type">{vaccine.vaccineType}</h4>
-                      <div className="vaccine-details">
-                        <p>
-                          <span>Ngày dự kiến:</span> {new Date(vaccine.scheduleDate).toLocaleDateString("vi-VN")}
-                        </p>
-                        {vaccine.isVaccinated && vaccine.actualDate && (
-                          <p>
-                            <span>Ngày thực tế:</span> {new Date(vaccine.actualDate).toLocaleDateString("vi-VN")}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               ) : (
-                <div className="no-vaccine-container">
-                  <p className="no-vaccine-message">Chưa tiêm mũi nào</p>
-                </div>
+                <table className="vaccine-table">
+                  <thead>
+                    <tr>
+                      <th>Vaccine</th>
+                      {ageRanges.map((range) => (
+                        <th key={`${range.min}-${range.max}`}>
+                          {range.min}-{range.max} tháng
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vaccines.map((vaccine) => {
+                      // eslint-disable-next-line no-unused-vars
+                      const isExactRange = ageRanges.some(
+                        (range) => range.min === vaccine.minAge && range.max === vaccine.maxAge
+                      );
+                      const status = getVaccinationStatus(vaccine.vaccineName);
+                      return (
+                        <tr key={vaccine.vaccineId}>
+                          <td>{vaccine.vaccineName}</td>
+                          {ageRanges.map((range) => {
+                            const isInRange = range.min === vaccine.minAge && range.max === vaccine.maxAge;
+                            return (
+                              <td
+                                key={`${range.min}-${range.max}`}
+                                className={
+                                  isInRange && status
+                                    ? status.status === "Đã tiêm đủ"
+                                      ? "vaccinated"
+                                      : "applicable"
+                                    : ""
+                                }
+                              >
+                                {isInRange && status ? (
+                                  <div>
+                                    <p>{status.status}</p>
+                                    {status.dates && <p>Ngày: {status.dates}</p>}
+                                    {status.remaining && <p>{status.remaining}</p>}
+                                  </div>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               )}
             </div>
           )}

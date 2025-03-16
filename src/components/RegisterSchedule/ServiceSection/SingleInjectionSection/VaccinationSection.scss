@@ -46,9 +46,8 @@ $transition-time: 0.3s;
 // Main styles
 .vaccination-section {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  overflow-x: hidden; // Prevent horizontal scrolling
+  overflow-x: hidden;
 
-  // Empty state
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -73,7 +72,6 @@ $transition-time: 0.3s;
     }
   }
 
-  // Loading state
   .loading-state {
     display: flex;
     justify-content: center;
@@ -83,7 +81,6 @@ $transition-time: 0.3s;
     font-style: italic;
   }
 
-  // Age group styles
   .age-group {
     margin-bottom: 1.5rem;
     border-radius: $border-radius;
@@ -130,12 +127,15 @@ $transition-time: 0.3s;
     }
   }
 
-  // Vaccine card styles
   .vaccine-card {
     height: 100%;
     border-radius: $border-radius;
     overflow: hidden;
     @include card-shadow;
+
+    &--appropriate {
+      border: 1px solid #52c41a; // Viền xanh khi phù hợp với độ tuổi
+    }
 
     &__image {
       height: 180px;
@@ -146,19 +146,46 @@ $transition-time: 0.3s;
 
     &__content {
       padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    &__header {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    &__checkbox {
+      margin-top: 4px; // Căn chỉnh checkbox với title
+    }
+
+    &__title-wrapper {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     &__title {
       font-size: 1.1rem;
       font-weight: 600;
-      margin-bottom: 0.5rem;
       color: #333;
+      line-height: 1.4;
+    }
+
+    &__appropriate-tag {
+      margin: 0;
+      line-height: 1.4;
+      font-size: 0.75rem;
+      padding: 2px 6px;
     }
 
     &__description {
       font-size: 0.9rem;
       color: $dark-gray;
-      margin-bottom: 0.5rem;
       line-height: 1.4;
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -169,7 +196,6 @@ $transition-time: 0.3s;
     &__origin {
       font-size: 0.85rem;
       color: $dark-gray;
-      margin-bottom: 0.75rem;
     }
 
     &__price {
@@ -178,17 +204,8 @@ $transition-time: 0.3s;
       font-size: 1rem;
       text-align: right;
     }
-
-    &__checkbox {
-      margin-top: 0.5rem;
-
-      .ant-checkbox-wrapper {
-        width: 100%;
-      }
-    }
   }
 
-  // Vaccines sidebar container
   .vaccines-sidebar {
     height: 100%;
 
@@ -198,7 +215,6 @@ $transition-time: 0.3s;
     }
   }
 
-  // Selected vaccines styles
   .selected-vaccines {
     position: sticky;
     top: 20px;
@@ -207,7 +223,7 @@ $transition-time: 0.3s;
     box-shadow: $box-shadow;
     overflow: hidden;
     margin-bottom: 1.5rem;
-    z-index: 10; // Add z-index to prevent overlapping
+    z-index: 10;
 
     &__header {
       @include section-header($secondary-color);
@@ -298,6 +314,41 @@ $transition-time: 0.3s;
       }
     }
 
+    &__payment-method {
+      padding: 0.5rem 1.2rem;
+
+      &-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+
+      .payment-option {
+        cursor: pointer;
+        padding: 4px;
+        border: 2px solid $medium-gray;
+        border-radius: 4px;
+        transition: all $transition-time;
+        display: inline-block;
+        margin-right: 10px;
+
+        &:hover {
+          border-color: $primary-color;
+        }
+
+        &--selected {
+          border-color: $primary-color;
+          background-color: lighten($primary-color, 45%);
+        }
+
+        .payment-image {
+          width: 80px;
+          height: 40px;
+          object-fit: contain;
+        }
+      }
+    }
+
     &__loading {
       margin-top: 0.5rem;
       font-size: 0.85rem;
@@ -348,10 +399,9 @@ $transition-time: 0.3s;
     }
   }
 
-  // Temporary schedules styles
   .temporary-schedules {
     position: relative;
-    z-index: 5; // Lower z-index than selected-vaccines
+    z-index: 5;
     margin-bottom: 1.5rem;
     background-color: $white;
     border-radius: $border-radius;
@@ -402,10 +452,9 @@ $transition-time: 0.3s;
     }
   }
 
-  // Scheduled vaccines styles
   .scheduled-vaccines {
     position: relative;
-    z-index: 5; // Lower z-index than selected-vaccines
+    z-index: 5;
     margin-top: 1.5rem;
     background-color: $white;
     border-radius: $border-radius;
@@ -448,12 +497,11 @@ $transition-time: 0.3s;
     }
   }
 
-  // Responsive styles
   @media (max-width: 768px) {
     .selected-vaccines {
       position: static;
       margin-top: 1.5rem;
-      z-index: auto; // Reset z-index on mobile
+      z-index: auto;
 
       &__list {
         max-height: none;

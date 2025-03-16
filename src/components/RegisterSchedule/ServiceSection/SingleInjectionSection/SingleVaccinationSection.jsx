@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Form, Row, Col, Checkbox, DatePicker, message, Space, Tag, List, Typography, Empty } from "antd";
+import { Form, Row, Col, DatePicker, message, Space, Tag, List, Typography, Empty } from "antd";
 import api from "../../../../config/axios";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
@@ -16,8 +16,8 @@ const VaccinationSection = () => {
   const [temporarySchedules, setTemporarySchedules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dateSelectionLoading, setDateSelectionLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(null);
 
-  // Lấy childId từ Redux store
   const selectedVaccinatedChild = useSelector((state) => state.selectedVaccinatedChild.selectedChild);
   const childId = selectedVaccinatedChild?.childId || "";
   const childName = selectedVaccinatedChild?.fullName || "";
@@ -26,15 +26,13 @@ const VaccinationSection = () => {
   const childAddress = selectedVaccinatedChild?.address || "";
   const childAge = childDob ? calculateChildAgeInMonths(childDob) : null;
 
-  // Lấy userId từ Redux store
   const user = useSelector((state) => state.user);
   const userId = user?.userId || "";
 
-  // Tính tuổi của trẻ theo tháng dựa trên ngày sinh
   function calculateChildAgeInMonths(dobString) {
     if (!dobString) return null;
     const dob = dayjs(dobString);
-    return dayjs().diff(dob, "month", true); // Lấy tuổi theo tháng với độ chính xác thập phân
+    return dayjs().diff(dob, "month", true);
   }
 
   const fetchVaccines = async () => {
@@ -45,7 +43,6 @@ const VaccinationSection = () => {
       const response = await api.get("v1/vaccine?pageIndex=1&pageSize=10000");
 
       if (response.data && response.data.data) {
-        // Lọc vắc-xin với phạm vi tuổi hợp lệ (0-96 tháng)
         const validVaccines = response.data.data.filter(
           (vaccine) => vaccine.minAge !== null && vaccine.maxAge !== null && vaccine.minAge >= 0 && vaccine.maxAge <= 96
         );
@@ -65,6 +62,7 @@ const VaccinationSection = () => {
     setVaccinationDate(null);
     setScheduledVaccines([]);
     setTemporarySchedules([]);
+    setPaymentMethod(null);
 
     if (childAge !== null) {
       const relevantGroups = {};
@@ -155,6 +153,10 @@ const VaccinationSection = () => {
       message.warning("Vui lòng chọn ngày tiêm chủng");
       return;
     }
+    if (!paymentMethod) {
+      message.warning("Vui lòng chọn phương thức thanh toán");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -169,6 +171,7 @@ const VaccinationSection = () => {
         injectionDate: formattedInjectionDate,
         amount: calculateTotal(),
         vaccineIdList: selectedVaccines,
+        paymentMethod: paymentMethod,
       };
 
       console.log("Payload đơn hàng:", orderPayload);
@@ -190,6 +193,7 @@ const VaccinationSection = () => {
           setTemporarySchedules([]);
           setSelectedVaccines([]);
           setVaccinationDate(null);
+          setPaymentMethod(null);
         } else {
           message.error("Không thể lên lịch tiêm chủng");
         }
@@ -267,25 +271,29 @@ const VaccinationSection = () => {
       <div className={`vaccine-card ${isVaccineAppropriateForChild(vaccine) ? "vaccine-card--appropriate" : ""}`}>
         <img className="vaccine-card__image" alt={vaccine.vaccineName} src={vaccine.image} />
         <div className="vaccine-card__content">
-          <Checkbox
-            className="vaccine-card__checkbox"
-            checked={selectedVaccines.includes(vaccine.vaccineId)}
-            onChange={() => handleCheckboxChange(vaccine.vaccineId)}
-          >
-            <div className="vaccine-card__title">
-              {vaccine.vaccineName} ({getManufacturerInfo(vaccine, "name")})
+          <div className="vaccine-card__header">
+            <input
+              type="checkbox"
+              checked={selectedVaccines.includes(vaccine.vaccineId)}
+              onChange={() => handleCheckboxChange(vaccine.vaccineId)}
+              className="vaccine-card__checkbox"
+            />
+            <div className="vaccine-card__title-wrapper">
+              <div className="vaccine-card__title">
+                {vaccine.vaccineName} ({getManufacturerInfo(vaccine, "name")})
+              </div>
+              {isVaccineAppropriateForChild(vaccine) && (
+                <Tag color="green" className="vaccine-card__appropriate-tag">
+                  Phù hợp với độ tuổi trẻ
+                </Tag>
+              )}
             </div>
-            {isVaccineAppropriateForChild(vaccine) && (
-              <Tag color="green" className="vaccine-card__appropriate-tag">
-                Phù hợp với độ tuổi trẻ
-              </Tag>
-            )}
-            <div className="vaccine-card__description">{vaccine.description?.info || "Không có thông tin"}</div>
-            <div className="vaccine-card__origin">
-              Nguồn gốc: {getManufacturerInfo(vaccine, "name")} ({getManufacturerInfo(vaccine, "countryName")})
-            </div>
-            <div className="vaccine-card__price">{new Intl.NumberFormat("vi-VN").format(vaccine.price)} đ</div>
-          </Checkbox>
+          </div>
+          <div className="vaccine-card__description">{vaccine.description?.info || "Không có thông tin"}</div>
+          <div className="vaccine-card__origin">
+            Nguồn gốc: {getManufacturerInfo(vaccine, "name")} ({getManufacturerInfo(vaccine, "countryName")})
+          </div>
+          <div className="vaccine-card__price">{new Intl.NumberFormat("vi-VN").format(vaccine.price)} đ</div>
         </div>
       </div>
     </Col>
@@ -293,6 +301,9 @@ const VaccinationSection = () => {
 
   const renderSelectedVaccinesList = () => {
     const selectedVaccineDetails = getSelectedVaccineDetails();
+    const vnpayImage = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTp1v7T287-ikP1m7dEUbs2n1SbbLEqkMd1ZA&s";
+    const momoImage =
+      "https://play-lh.googleusercontent.com/uCtnppeJ9ENYdJaSL5av-ZL1ZM1f3b35u9k8EOEjK3ZdyG509_2osbXGH5qzXVmoFv0";
 
     return (
       <div className="selected-vaccines">
@@ -343,6 +354,23 @@ const VaccinationSection = () => {
                 <div className="selected-vaccines__loading">Đang tải xem trước lịch trình...</div>
               )}
             </div>
+            <div className="selected-vaccines__payment-method">
+              <label className="selected-vaccines__payment-label">Phương thức thanh toán:</label>
+              <Space>
+                <div
+                  className={`payment-option ${paymentMethod === "vnpay" ? "payment-option--selected" : ""}`}
+                  onClick={() => !loading && setPaymentMethod("vnpay")}
+                >
+                  <img src={vnpayImage} alt="VNPAY" className="payment-image" />
+                </div>
+                <div
+                  className={`payment-option ${paymentMethod === "momo" ? "payment-option--selected" : ""}`}
+                  onClick={() => !loading && setPaymentMethod("momo")}
+                >
+                  <img src={momoImage} alt="Momo" className="payment-image" />
+                </div>
+              </Space>
+            </div>
             <div className="selected-vaccines__total">
               <span className="selected-vaccines__total-label">Tổng cộng:</span>
               <span className="selected-vaccines__total-amount">{formatTotalPrice()}</span>
@@ -350,7 +378,9 @@ const VaccinationSection = () => {
             <button
               className="selected-vaccines__button"
               onClick={submitSchedule}
-              disabled={!childId || !userId || selectedVaccines.length === 0 || !vaccinationDate || loading}
+              disabled={
+                !childId || !userId || selectedVaccines.length === 0 || !vaccinationDate || !paymentMethod || loading
+              }
             >
               {loading ? "ĐANG XỬ LÝ..." : "ĐĂNG KÝ MŨI TIÊM"}
             </button>
