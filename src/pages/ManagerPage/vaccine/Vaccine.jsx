@@ -24,6 +24,7 @@ import uploadFile from "../../../utils/upload";
 import { toast } from "react-toastify";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
+import * as XLSX from "xlsx";
 
 if (pdfFonts && pdfFonts.pdfMake) {
   pdfMake.vfs = pdfFonts.pdfMake.vfs;
@@ -286,6 +287,56 @@ function Vaccine() {
     toast.success("PDF exported successfully");
   };
 
+  const exportExcel = () => {
+    try {
+      // Chuẩn bị dữ liệu cho Excel
+      const excelData = filteredData.map((item) => ({
+        "Vaccine Name": item.vaccineName,
+        Manufacturer: item.manufacturers[0]?.name || "N/A",
+        Price: formatVND(item.price),
+        "Min Age (months)": item.minAge,
+        "Max Age (months)": item.maxAge,
+        "Number of Doses": item.numberDose,
+        "Duration (days)": item.duration,
+        Status: item.isActive ? "Active" : "Inactive",
+        Information: item.description?.info || "",
+        "Targeted Patients": item.description?.targetedPatient || "",
+        "Injection Schedule": item.description?.injectionSchedule || "",
+        "Vaccine Reaction": item.description?.vaccineReaction || "",
+      }));
+
+      // Tạo worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Điều chỉnh độ rộng cột
+      const colWidths = Object.keys(excelData[0]).map((key) => ({
+        wch: Math.max(key.length, ...excelData.map((item) => String(item[key]).length)) + 5,
+      }));
+      ws["!cols"] = colWidths;
+
+      // Tạo workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Vaccines");
+
+      // Thêm thông tin tổng quan
+      const summary = [
+        ["Export Date:", new Date().toLocaleDateString()],
+        ["Total Vaccines:", filteredData.length],
+        ["Active Vaccines:", filteredData.filter((item) => item.isActive).length],
+        ["Inactive Vaccines:", filteredData.filter((item) => !item.isActive).length],
+      ];
+      const summaryWs = XLSX.utils.aoa_to_sheet(summary);
+      XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+      // Xuất file
+      XLSX.writeFile(wb, "vaccine-list.xlsx");
+      toast.success("Excel exported successfully");
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to export Excel");
+    }
+  };
+
   return (
     <div className="Vaccine">
       <h1>Vaccine Management</h1>
@@ -304,6 +355,9 @@ function Vaccine() {
         <div className="action-section">
           <Button className="export-btn" onClick={exportPDF}>
             Export PDF
+          </Button>
+          <Button className="export-btn" onClick={exportExcel}>
+            Export Excel
           </Button>
           <Button type="primary" onClick={handleOpenModal}>
             Add Vaccine
@@ -440,7 +494,6 @@ function Vaccine() {
         </Form>
       </Modal>
 
-      {/* Phần hiển thị chi tiết đã chỉnh sửa */}
       <Modal
         title="Chi tiết Vaccine"
         open={detailOpen}

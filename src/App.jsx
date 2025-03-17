@@ -29,6 +29,7 @@ import DoctorPage from "./pages/DoctorPage/DoctorPage";
 import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
 import ResetPassword from "./pages/CustomerPage/resetPassword/ResetPassword";
 import MedicalRecord from "./pages/CustomerPage/MedicalRecord/MedicalRecord";
+import ChatRoom from "./components/Chat";
 
 // eslint-disable-next-line react/prop-types
 const PrivateRoute = ({ roleName }) => {
@@ -129,6 +130,10 @@ const App = () => {
               element: <TotalAccount />,
             },
             {
+              path: "chat",
+              element: <ChatRoom />,
+            },
+            {
               path: "dashboard/total-vaccine",
               element: <TotalVaccine />,
             },
@@ -159,6 +164,10 @@ const App = () => {
             {
               path: "vaccine",
               element: <Vaccine />,
+            },
+            {
+              path: "chat",
+              element: <ChatRoom />,
             },
             {
               path: "batch",

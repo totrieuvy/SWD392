@@ -67,6 +67,7 @@ const Sidebar = () => {
           getItem("Total revenue", "dashboard/total-revenue"),
           getItem("Total vaccine", "dashboard/total-vaccine"),
         ]),
+        getItem("Chat", "chat", <MedicineBoxOutlined />),
         getItem("Profile", "profile", <UserOutlined />, [
           getItem("View profile", `/admin/profile/${user.id}`),
           getItem("Change password", "/admin/changepassword"),
@@ -79,6 +80,7 @@ const Sidebar = () => {
     } else if (user?.roleName === "manager") {
       items = [
         getItem("Vaccine", "vaccine", <MedicineBoxOutlined />),
+        getItem("Chat", "chat", <MedicineBoxOutlined />),
         getItem("Package Vaccine", "package-vaccine", <MedicineBoxOutlined />),
         getItem("Manufacture", "manufacture", <ToolOutlined />),
         getItem("Batch", "batch", <ToolOutlined />),
