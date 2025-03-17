@@ -26,7 +26,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Mở port 80 cho Nginx
-EXPOSE 80
+EXPOSE 5173
 
 # Chạy Nginx ở chế độ nền
 CMD ["nginx", "-g", "daemon off;"]
