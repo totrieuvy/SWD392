@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Typography, Row, Col, Card, Select, Pagination } from "antd";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion"; // Import Framer Motion
 import api from "../../../config/axios";
 import "./VaccineSection.scss";
 
@@ -13,25 +14,16 @@ const VaccineSection = () => {
   const [selectedAge, setSelectedAge] = useState("");
   const [selectedCountry, setSelectedCountry] = useState([]);
   const [priceSortOrder, setPriceSortOrder] = useState("");
-
-  // Pagination state
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
 
   const fetchVaccines = async () => {
     try {
-      // Update API call to include pagination parameters
       const response = await api.get(`v1/vaccine?pageIndex=${pageIndex}&pageSize=${pageSize}`);
       if (response.data && response.data.statusCode === 200) {
         setVaccines(response.data.data || []);
-        // If the API returns total count in the response, update it
-        if (response.data.totalItems) {
-          setTotalItems(response.data.totalItems);
-        } else if (response.data.data) {
-          // Fallback if API doesn't return total count
-          setTotalItems(response.data.data.length);
-        }
+        setTotalItems(response.data.totalItems || response.data.data.length);
       }
     } catch (error) {
       console.error("Error fetching vaccines:", error);
@@ -41,100 +33,68 @@ const VaccineSection = () => {
   useEffect(() => {
     fetchVaccines();
     document.title = "Home";
-  }, [pageIndex, pageSize]); // Re-fetch when pagination changes
+  }, [pageIndex, pageSize]);
 
-  // Get the manufacturer from the first entry in the manufacturers array
   const getManufacturer = (vaccine) => {
     return vaccine.manufacturers && vaccine.manufacturers.length > 0 ? vaccine.manufacturers[0] : null;
   };
 
-  // Lấy danh sách tên nhà sản xuất duy nhất
   const manufacturerOptions = Array.from(
-    new Set(
-      vaccines
-        .map((vaccine) => {
-          const manufacturer = getManufacturer(vaccine);
-          return manufacturer ? manufacturer.name : null;
-        })
-        .filter(Boolean)
-    )
+    new Set(vaccines.map((vaccine) => getManufacturer(vaccine)?.name).filter(Boolean))
   );
-
-  // Lấy danh sách nhóm độ tuổi duy nhất dạng "minAge - maxAge" và sắp xếp theo minAge tăng dần
   const ageOptions = Array.from(new Set(vaccines.map((vaccine) => `${vaccine.minAge} - ${vaccine.maxAge}`))).sort(
-    (a, b) => {
-      const ageA = parseInt(a.split(" - ")[0], 10);
-      const ageB = parseInt(b.split(" - ")[0], 10);
-      return ageA - ageB;
-    }
+    (a, b) => parseInt(a.split(" - ")[0], 10) - parseInt(b.split(" - ")[0], 10)
   );
-
-  // Lấy danh sách quốc gia (countryName) duy nhất và sắp xếp theo bảng chữ cái
   const countryOptions = Array.from(
-    new Set(
-      vaccines
-        .map((vaccine) => {
-          const manufacturer = getManufacturer(vaccine);
-          return manufacturer ? manufacturer.countryName : null;
-        })
-        .filter(Boolean)
-    )
+    new Set(vaccines.map((vaccine) => getManufacturer(vaccine)?.countryName).filter(Boolean))
   ).sort((a, b) => a.localeCompare(b));
 
-  // Handle filter changes
   const applyFilters = () => {
-    // Reset to first page when filters change
     setPageIndex(1);
     fetchVaccines();
   };
 
-  // Lọc danh sách vaccine theo các filter đã chọn
   const filteredVaccines = vaccines.filter((vaccine) => {
-    let manufacturerMatch = true;
-    let ageMatch = true;
-    let countryMatch = true;
     const manufacturer = getManufacturer(vaccine);
-
-    if (selectedManufacturer && manufacturer) {
-      manufacturerMatch = manufacturer.name === selectedManufacturer;
-    }
-    if (selectedAge) {
-      const ageGroup = `${vaccine.minAge} - ${vaccine.maxAge}`;
-      ageMatch = ageGroup === selectedAge;
-    }
-    if (selectedCountry.length > 0 && manufacturer) {
-      countryMatch = selectedCountry.includes(manufacturer.countryName);
-    }
-    return manufacturerMatch && ageMatch && countryMatch;
+    return (
+      (!selectedManufacturer || (manufacturer && manufacturer.name === selectedManufacturer)) &&
+      (!selectedAge || `${vaccine.minAge} - ${vaccine.maxAge}` === selectedAge) &&
+      (selectedCountry.length === 0 || (manufacturer && selectedCountry.includes(manufacturer.countryName)))
+    );
   });
 
-  // Sắp xếp danh sách vaccine
   let sortedVaccines = [...filteredVaccines];
   if (priceSortOrder) {
-    sortedVaccines.sort((a, b) => {
-      return priceSortOrder === "asc" ? a.price - b.price : b.price - a.price;
-    });
+    sortedVaccines.sort((a, b) => (priceSortOrder === "asc" ? a.price - b.price : b.price - a.price));
   } else {
-    sortedVaccines.sort((a, b) => {
-      if (a.minAge !== b.minAge) {
-        return a.minAge - b.minAge;
-      }
-      return a.vaccineName.localeCompare(b.vaccineName);
-    });
+    sortedVaccines.sort((a, b) =>
+      a.minAge !== b.minAge ? a.minAge - b.minAge : a.vaccineName.localeCompare(b.vaccineName)
+    );
   }
 
-  // Handle pagination change
   const handlePaginationChange = (page, pageSize) => {
     setPageIndex(page);
     setPageSize(pageSize);
   };
 
+  // Định nghĩa variants cho animation của card
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (i) => ({
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, delay: i * 0.1 }, // Stagger effect
+    }),
+  };
+
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <Title level={2} className="text-center mb-12" style={{ display: "flex", justifyContent: "center" }}>
-          Danh sách vaccine
-        </Title>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
+          <Title level={2} className="text-center mb-12" style={{ display: "flex", justifyContent: "center" }}>
+            Danh sách vaccine
+          </Title>
+        </motion.div>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={24} md={6}>
             <div className="vaccine-filter-sidebar">
@@ -214,7 +174,6 @@ const VaccineSection = () => {
               </div>
             </div>
           </Col>
-          {/* Danh sách card */}
           <Col xs={24} sm={24} md={18}>
             <Row gutter={[16, 16]} justify="start">
               {sortedVaccines.map((vaccine, index) => {
@@ -222,31 +181,37 @@ const VaccineSection = () => {
                 return (
                   <Col key={index}>
                     <Link to={`/detail/${vaccine.vaccineId}`}>
-                      <Card
-                        hoverable
-                        cover={<img alt={vaccine.vaccineName} src={vaccine.image} className="vaccine-image" />}
-                        className="vaccine-card"
+                      <motion.div
+                        custom={index} // Truyền index để stagger
+                        initial="hidden"
+                        animate="visible"
+                        variants={cardVariants}
                       >
-                        <div className="vaccine-info">
-                          <h3 className="vaccine-name">{vaccine.vaccineName}</h3>
-                          <p className="vaccine-age">
-                            Độ tuổi: {vaccine.minAge} - {vaccine.maxAge} tuổi
-                          </p>
-                          <p className="vaccine-price">Giá: {vaccine.price.toLocaleString("vi-VN")} VND</p>
-                          {manufacturer && (
-                            <>
-                              <p className="vaccine-manufacturer">Nhà sản xuất: {manufacturer.name}</p>
-                              <p className="vaccine-country">Quốc gia: {manufacturer.countryName}</p>
-                            </>
-                          )}
-                        </div>
-                      </Card>
+                        <Card
+                          hoverable
+                          cover={<img alt={vaccine.vaccineName} src={vaccine.image} className="vaccine-image" />}
+                          className="vaccine-card"
+                        >
+                          <div className="vaccine-info">
+                            <h3 className="vaccine-name">{vaccine.vaccineName}</h3>
+                            <p className="vaccine-age">
+                              Độ tuổi: {vaccine.minAge} - {vaccine.maxAge} tuổi
+                            </p>
+                            <p className="vaccine-price">Giá: {vaccine.price.toLocaleString("vi-VN")} VND</p>
+                            {manufacturer && (
+                              <>
+                                <p className="vaccine-manufacturer">Nhà sản xuất: {manufacturer.name}</p>
+                                <p className="vaccine-country">Quốc gia: {manufacturer.countryName}</p>
+                              </>
+                            )}
+                          </div>
+                        </Card>
+                      </motion.div>
                     </Link>
                   </Col>
                 );
               })}
             </Row>
-            {/* Pagination controls */}
             <Row className="mt-6" justify="center">
               <Pagination
                 current={pageIndex}
