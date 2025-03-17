@@ -7,7 +7,7 @@ const HomePage = () => {
       {/* First Section */}
       <section>
         <img
-          src="src\\assets\\HomePage\\Children.jpg"
+          src="https://t3.ftcdn.net/jpg/04/78/50/80/360_F_478508020_FRSF7DMKj0oWDvlJDnQG0OXnazaZu1nz.jpg"
           alt="Placeholder"
           style={{
             width: "100%",
@@ -40,7 +40,7 @@ const HomePage = () => {
         {/* Right Side: Image */}
         <div style={{ flex: "1 1 300px", textAlign: "right" }}>
           <img
-            src="src\\assets\\HomePage\\Children2.jpg"
+            src="https://static.vecteezy.com/system/resources/previews/004/698/308/non_2x/female-doctor-injecting-vaccine-to-patient-healthcare-and-medical-concept-drawn-cartoon-art-illustration-vector.jpg"
             alt="Placeholder"
             style={{ width: "100%", maxWidth: "500px", height: "auto" }}
           />

@@ -15,6 +15,7 @@ import {
   List,
   Spin,
   Image,
+  Space,
 } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../../../config/axios";
@@ -44,6 +45,7 @@ const VaccinationPackageSection = () => {
   const [temporarySchedules, setTemporarySchedules] = useState([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(null); // New state for payment method
 
   const childId = selectedVaccinatedChild?.childId || "";
   const childName = selectedVaccinatedChild?.fullName || "";
@@ -53,6 +55,10 @@ const VaccinationPackageSection = () => {
   const childAge = childDob ? calculateChildAge(childDob) : null;
 
   const userId = user?.userId || "";
+
+  const vnpayImage = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTp1v7T287-ikP1m7dEUbs2n1SbbLEqkMd1ZA&s";
+  const momoImage =
+    "https://play-lh.googleusercontent.com/uCtnppeJ9ENYdJaSL5av-ZL1ZM1f3b35u9k8EOEjK3ZdyG509_2osbXGH5qzXVmoFv0";
 
   function calculateChildAge(dobString) {
     if (!dobString) return null;
@@ -69,6 +75,7 @@ const VaccinationPackageSection = () => {
     if (childId) {
       dispatch(resetPackageSelection());
       setTemporarySchedules([]);
+      setPaymentMethod(null); // Reset payment method when child changes
     }
   }, [childId, dispatch]);
 
@@ -105,6 +112,7 @@ const VaccinationPackageSection = () => {
   const handlePackageSelect = (pkg) => {
     if (selectedPackage.packageId === pkg.packageId) {
       dispatch(resetPackageSelection());
+      setPaymentMethod(null); // Reset payment method when package is deselected
     } else {
       dispatch(
         selectPackage({
@@ -193,6 +201,10 @@ const VaccinationPackageSection = () => {
       message.warning("Vui lòng chọn gói tiêm chủng và ngày tiêm trước");
       return;
     }
+    if (!paymentMethod) {
+      message.warning("Vui lòng chọn phương thức thanh toán");
+      return;
+    }
     setConfirmModalVisible(true);
   };
 
@@ -211,6 +223,7 @@ const VaccinationPackageSection = () => {
         injectionDate: formattedInjectionDate,
         amount: calculateTotalPrice(),
         vaccineIdList: vaccineIds,
+        paymentMethod: paymentMethod, // Include payment method in payload
       };
 
       const orderResponse = await api.post("order", orderPayload);
@@ -228,6 +241,7 @@ const VaccinationPackageSection = () => {
           message.success("Đã tạo lịch tiêm chủng thành công");
           dispatch(resetPackageSelection());
           setTemporarySchedules([]);
+          setPaymentMethod(null); // Reset payment method after success
         } else {
           message.error("Không thể lên lịch tiêm chủng");
         }
@@ -339,6 +353,24 @@ const VaccinationPackageSection = () => {
           {scheduleLoading && <div className="loading-text">Đang tải xem trước lịch...</div>}
         </div>
 
+        <div className="payment-selection">
+          <label>Phương thức thanh toán:</label>
+          <Space>
+            <div
+              className={`payment-option ${paymentMethod === "vnpay" ? "payment-option--selected" : ""}`}
+              onClick={() => !loading && setPaymentMethod("vnpay")}
+            >
+              <img src={vnpayImage} alt="VNPAY" className="payment-image" />
+            </div>
+            <div
+              className={`payment-option ${paymentMethod === "momo" ? "payment-option--selected" : ""}`}
+              onClick={() => !loading && setPaymentMethod("momo")}
+            >
+              <img src={momoImage} alt="Momo" className="payment-image" />
+            </div>
+          </Space>
+        </div>
+
         <div className="total-price">
           <span>Tổng cộng:</span>
           <span className="price-value">{formatPrice(calculateTotalPrice())}</span>
@@ -348,7 +380,7 @@ const VaccinationPackageSection = () => {
           type="primary"
           className="submit-btn"
           onClick={handleSubmitVaccination}
-          disabled={!selectedPackage.vaccinationDate || loading}
+          disabled={!selectedPackage.vaccinationDate || !paymentMethod || loading}
         >
           {loading ? "Đang xử lý..." : "Đăng ký tiêm chủng"}
         </Button>
@@ -544,6 +576,9 @@ const VaccinationPackageSection = () => {
           <div>
             <strong>Ngày:</strong>{" "}
             {selectedPackage.vaccinationDate && dayjs(selectedPackage.vaccinationDate).format("DD/MM/YYYY")}
+          </div>
+          <div>
+            <strong>Phương thức thanh toán:</strong> {paymentMethod === "vnpay" ? "VNPAY" : "MoMo"}
           </div>
           <div>
             <strong>Tổng số tiền:</strong> {formatPrice(calculateTotalPrice())}

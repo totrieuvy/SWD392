@@ -109,7 +109,11 @@ const Header = () => {
 
             <Link to="/" className="HomePage-Header-logo-link">
               <div className="HomePage-Header-logo-container">
-                <img src="src/assets/HomePage/VaccineLogo.jpg" alt="Logo" className="HomePage-Header-logo-image" />
+                <img
+                  src="https://static.vecteezy.com/system/resources/previews/005/364/630/non_2x/immune-vaccine-inspiration-illustration-logo-vector.jpg"
+                  alt="Logo"
+                  className="HomePage-Header-logo-image"
+                />
               </div>
               <h1 className="HomePage-Header-title">Vaccine Care</h1>
             </Link>

@@ -179,6 +179,42 @@
       }
     }
 
+    .payment-selection {
+      margin: 16px 0;
+
+      label {
+        display: block;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .payment-option {
+        cursor: pointer;
+        padding: 4px;
+        border: 2px solid #e0e0e0;
+        border-radius: 4px;
+        transition: all 0.3s;
+        display: inline-block;
+        margin-right: 10px;
+
+        &:hover {
+          border-color: #1a73e8;
+        }
+
+        &.payment-option--selected {
+          border-color: #1a73e8;
+          background-color: #e6f7ff;
+        }
+
+        .payment-image {
+          width: 80px;
+          height: 40px;
+          object-fit: contain;
+        }
+      }
+    }
+
     .total-price {
       display: flex;
       justify-content: space-between;
