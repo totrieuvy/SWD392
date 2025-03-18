@@ -1,14 +1,9 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
 import { GoogleAuthProvider } from "firebase/auth";
 import { getAuth } from "firebase/auth";
-import { getDatabase, ref, push, onValue, serverTimestamp, set } from "firebase/database";
+import { getDatabase, ref, push, onValue, serverTimestamp, set, remove } from "firebase/database";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBEgp6wElu9GGzt8VSqrD4Z5JjdaHbAS0U",
   authDomain: "course-ac11b.firebaseapp.com",
@@ -20,7 +15,6 @@ const firebaseConfig = {
   databaseURL: "https://course-ac11b-default-rtdb.firebaseio.com/",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const googleProvider = new GoogleAuthProvider();
 const auth = getAuth();
@@ -30,4 +24,4 @@ export const storage = getStorage(app);
 
 export { googleProvider, auth };
 
-export { db, ref, push, onValue, serverTimestamp, set }; // Thêm 'set' vào export
+export { db, ref, push, onValue, serverTimestamp, set, remove }; // Thêm 'remove'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, ref, push, onValue, serverTimestamp, set } from "../config/firebase";
+import { db, ref, push, onValue, serverTimestamp, set, remove } from "../config/firebase";
 import { useSelector } from "react-redux";
 import "./ChatRoom.scss";
 
@@ -9,24 +9,21 @@ const ChatRoom = () => {
   const [typingUsers, setTypingUsers] = useState([]);
   const user = useSelector((state) => state?.user);
 
-  // Lắng nghe tin nhắn và trạng thái typing
   useEffect(() => {
     const chatRef = ref(db, "chats/admin_manager");
     const typingRef = ref(db, "typing/admin_manager");
 
-    // Lắng nghe tin nhắn
     onValue(chatRef, (snapshot) => {
       const data = snapshot.val();
       const messagesArray = data ? Object.keys(data).map((key) => ({ id: key, ...data[key] })) : [];
       setMessages(messagesArray);
     });
 
-    // Lắng nghe trạng thái typing
     onValue(typingRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const typingArray = Object.keys(data)
-          .filter((key) => data[key].isTyping && key !== user?.userName) // Loại bỏ chính mình
+          .filter((key) => data[key].isTyping && key !== user?.userName)
           .map((key) => data[key].userName);
         setTypingUsers(typingArray);
       } else {
@@ -34,13 +31,9 @@ const ChatRoom = () => {
       }
     });
 
-    // Cleanup khi component unmount
-    return () => {
-      // Không cần off listeners vì onValue tự động cleanup trong React 18+
-    };
+    return () => {};
   }, [user?.userName]);
 
-  // Cập nhật trạng thái typing khi nhập
   const handleTyping = (e) => {
     setText(e.target.value);
     const typingRef = ref(db, `typing/admin_manager/${user?.userName}`);
@@ -59,11 +52,21 @@ const ChatRoom = () => {
         text,
         timestamp: serverTimestamp(),
       });
-      // Xóa trạng thái typing sau khi gửi
       const typingRef = ref(db, `typing/admin_manager/${user?.userName}`);
       await set(typingRef, null);
       setText("");
     }
+  };
+
+  // Xóa với bạn (chỉ xóa ở phía client)
+  const deleteForMe = (messageId) => {
+    setMessages(messages.filter((msg) => msg.id !== messageId));
+  };
+
+  // Xóa với mọi người (xóa trên Firebase)
+  const deleteForEveryone = async (messageId) => {
+    const messageRef = ref(db, `chats/admin_manager/${messageId}`);
+    await remove(messageRef);
   };
 
   const formatTimestamp = (timestamp) => {
@@ -94,6 +97,16 @@ const ChatRoom = () => {
                   {msg.text}
                 </p>
                 <span className="timestamp">{formatTimestamp(msg.timestamp)}</span>
+                {isCurrentUser && (
+                  <div className="message-actions">
+                    <button className="delete-for-me" onClick={() => deleteForMe(msg.id)}>
+                      Xóa với tôi
+                    </button>
+                    <button className="delete-for-everyone" onClick={() => deleteForEveryone(msg.id)}>
+                      Xóa với mọi người
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           );
