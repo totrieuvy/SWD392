@@ -20,7 +20,7 @@ const VaccineSection = () => {
 
   const fetchVaccines = async () => {
     try {
-      const response = await api.get(`v1/vaccine?pageIndex=${pageIndex}&pageSize=${pageSize}`);
+      const response = await api.get(`v1/vaccine?pageIndex=1&pageSize=1000`);
       if (response.data && response.data.statusCode === 200) {
         setVaccines(response.data.data || []);
         setTotalItems(response.data.totalItems || response.data.data.length);

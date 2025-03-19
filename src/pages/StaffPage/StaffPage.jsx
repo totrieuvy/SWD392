@@ -7,28 +7,40 @@ import { useNavigate } from "react-router-dom";
 
 function StaffPage() {
   const [schedule, setSchedule] = useState([]);
+  const [vaccines, setVaccines] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchSchedule();
+    fetchData();
     document.title = "Staff";
 
     const interval = setInterval(() => {
-      fetchSchedule();
+      fetchData();
     }, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const fetchSchedule = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await api.get("schedule");
-      if (response.data && response.data.data) {
-        const sortedData = response.data.data.sort((a, b) => {
+      // Fetch schedule
+      const scheduleResponse = await api.get("schedule");
+      // Fetch vaccines
+      const vaccineResponse = await api.get("v1/vaccine?pageIndex=1&pageSize=1000");
+
+      // Create vaccine lookup map
+      const vaccineMap = {};
+      vaccineResponse.data.data.forEach((vaccine) => {
+        vaccineMap[vaccine.vaccineId] = vaccine.vaccineName;
+      });
+      setVaccines(vaccineMap);
+
+      if (scheduleResponse.data && scheduleResponse.data.data) {
+        const sortedData = scheduleResponse.data.data.sort((a, b) => {
           return (
             new Date(b.scheduleDate.replace(/(\d{2})-(\d{2})-(\d{4})/, "$3-$2-$1")) -
             new Date(a.scheduleDate.replace(/(\d{2})-(\d{2})-(\d{4})/, "$3-$2-$1"))
@@ -37,19 +49,18 @@ function StaffPage() {
         setSchedule(sortedData);
       }
     } catch (error) {
-      console.error("Error fetching schedule:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleConfirmCheckIn = async (scheduleId) => {
-    // Show confirmation alert
     if (window.confirm("Are you sure you want to confirm this check-in?")) {
       setLoading(true);
       try {
         await api.put(`schedule/check-in/${scheduleId}`);
-        fetchSchedule();
+        fetchData();
       } catch (error) {
         console.error("Error confirming check-in:", error);
       } finally {
@@ -72,21 +83,10 @@ function StaffPage() {
     item.childrenName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Modified function to only show button for 'upcoming' status
   const isButtonDisabled = (status) => {
     return status.toLowerCase() !== "upcoming";
   };
 
-  // Modified function to only display text for specific statuses
-  const getButtonText = (status) => {
-    if (status.toLowerCase() === "completed") return "";
-    if (status.toLowerCase() === "vaccinated") return "";
-    if (status.toLowerCase() === "check-in") return "";
-    if (status.toLowerCase() === "upcoming") return "";
-    return "";
-  };
-
-  // Modified function to determine if button should be shown
   const shouldShowButton = (status) => {
     return status.toLowerCase() === "upcoming";
   };
@@ -141,7 +141,6 @@ function StaffPage() {
                 <th>Vaccine</th>
                 <th>Schedule Date</th>
                 <th>Status</th>
-                <th>Parent Name</th>
                 <th>Phone</th>
                 <th>Action</th>
               </tr>
@@ -150,21 +149,18 @@ function StaffPage() {
               {filteredSchedule.map((item, index) => (
                 <tr key={index}>
                   <td className="child-name">{item.childrenName}</td>
-                  <td>{item.vaccineName}</td>
+                  <td>{vaccines[item.vaccineId] || "Unknown Vaccine"}</td>
                   <td>{item.scheduleDate}</td>
                   <td>
                     <span className={`status-badge ${item.scheduleStatus.toLowerCase()}`}>{item.scheduleStatus}</span>
                   </td>
-                  <td>{item.parentsName}</td>
                   <td>{item.phoneNumber}</td>
                   <td>
                     {shouldShowButton(item.scheduleStatus) ? (
                       <button onClick={() => handleConfirmCheckIn(item.scheduleId)} className="confirm-button">
                         Confirm Check-in
                       </button>
-                    ) : (
-                      <span className="status-text">{getButtonText(item.scheduleStatus)}</span>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
               ))}

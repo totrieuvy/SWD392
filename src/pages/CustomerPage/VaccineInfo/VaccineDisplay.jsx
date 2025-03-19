@@ -16,7 +16,7 @@ function VaccineDisplay() {
   const fetchVaccines = async () => {
     try {
       setLoading(true);
-      const response = await api.get("v1/vaccine");
+      const response = await api.get("v1/vaccine?pageIndex=1&pageSize=1000");
 
       if (response.data && response.data.statusCode === 200) {
         // Process data to ensure manufacturers is handled correctly
