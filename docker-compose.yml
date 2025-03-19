@@ -4,14 +4,14 @@ services:
   react-prod:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     container_name: vaccine_react_prod
     ports:
       - "5173:80"
     restart: always
 
   # react-dev:
-  #   build:
+  #   build:s
   #     context: .
   #     dockerfile: Dockerfile.dev
   #   container_name: vaccine_react_dev
