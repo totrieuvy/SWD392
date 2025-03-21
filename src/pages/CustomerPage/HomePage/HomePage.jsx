@@ -15,7 +15,7 @@ const HomePage = () => {
   const [input, setInput] = useState("");
 
   // Thay YOUR_API_KEY bằng API key thực tế của bạn
-  const GEMINI_API_KEY = "AIzaSyC_mEsbT-IJDMESjDk05NCfIBx60_USwXA"; 
+  const GEMINI_API_KEY = "AIzaSyC_mEsbT-IJDMESjDk05NCfIBx60_USwXA";
   const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   const handleSendMessage = async () => {
@@ -170,7 +170,7 @@ const HomePage = () => {
                 alignItems: "center",
               }}
             >
-              <span>Chat Support</span>
+              <span>Chat With Vaccine Care AI Supporter</span>
               <button
                 onClick={() => setIsChatOpen(false)}
                 style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}

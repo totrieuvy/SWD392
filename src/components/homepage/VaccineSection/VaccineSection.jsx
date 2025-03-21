@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Typography, Row, Col, Card, Select, Pagination } from "antd";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion"; // Import Framer Motion
+import { motion } from "framer-motion";
 import api from "../../../config/axios";
 import "./VaccineSection.scss";
 
@@ -15,15 +15,21 @@ const VaccineSection = () => {
   const [selectedCountry, setSelectedCountry] = useState([]);
   const [priceSortOrder, setPriceSortOrder] = useState("");
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10); // Cố định pageSize là 10
   const [totalItems, setTotalItems] = useState(0);
 
   const fetchVaccines = async () => {
     try {
-      const response = await api.get(`v1/vaccine?pageIndex=1&pageSize=1000`);
+      const response = await api.get(`v1/vaccine`, {
+        params: {
+          pageIndex: pageIndex,
+          pageSize: pageSize,
+        },
+      });
       if (response.data && response.data.statusCode === 200) {
         setVaccines(response.data.data || []);
-        setTotalItems(response.data.totalItems || response.data.data.length);
+        // Sử dụng totalCount từ API thay vì totalItems
+        setTotalItems(response.data.totalCount || response.data.data.length);
       }
     } catch (error) {
       console.error("Error fetching vaccines:", error);
@@ -33,7 +39,7 @@ const VaccineSection = () => {
   useEffect(() => {
     fetchVaccines();
     document.title = "Home";
-  }, [pageIndex, pageSize]);
+  }, [pageIndex]); // Gọi lại API khi pageIndex thay đổi
 
   const getManufacturer = (vaccine) => {
     return vaccine.manufacturers && vaccine.manufacturers.length > 0 ? vaccine.manufacturers[0] : null;
@@ -50,7 +56,7 @@ const VaccineSection = () => {
   ).sort((a, b) => a.localeCompare(b));
 
   const applyFilters = () => {
-    setPageIndex(1);
+    setPageIndex(1); // Reset về trang 1 khi áp dụng bộ lọc
     fetchVaccines();
   };
 
@@ -72,18 +78,16 @@ const VaccineSection = () => {
     );
   }
 
-  const handlePaginationChange = (page, pageSize) => {
+  const handlePaginationChange = (page) => {
     setPageIndex(page);
-    setPageSize(pageSize);
   };
 
-  // Định nghĩa variants cho animation của card
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i) => ({
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, delay: i * 0.1 }, // Stagger effect
+      transition: { duration: 0.5, delay: i * 0.1 },
     }),
   };
 
@@ -181,12 +185,7 @@ const VaccineSection = () => {
                 return (
                   <Col key={index}>
                     <Link to={`/detail/${vaccine.vaccineId}`}>
-                      <motion.div
-                        custom={index} // Truyền index để stagger
-                        initial="hidden"
-                        animate="visible"
-                        variants={cardVariants}
-                      >
+                      <motion.div custom={index} initial="hidden" animate="visible" variants={cardVariants}>
                         <Card
                           hoverable
                           cover={<img alt={vaccine.vaccineName} src={vaccine.image} className="vaccine-image" />}
@@ -195,7 +194,7 @@ const VaccineSection = () => {
                           <div className="vaccine-info">
                             <h3 className="vaccine-name">{vaccine.vaccineName}</h3>
                             <p className="vaccine-age">
-                              Độ tuổi: {vaccine.minAge} - {vaccine.maxAge} tuổi
+                              Độ tuổi: {vaccine.minAge} - {vaccine.maxAge} tháng
                             </p>
                             <p className="vaccine-price">Giá: {vaccine.price.toLocaleString("vi-VN")} VND</p>
                             {manufacturer && (
@@ -218,7 +217,6 @@ const VaccineSection = () => {
                 pageSize={pageSize}
                 total={totalItems}
                 onChange={handlePaginationChange}
-                showSizeChanger
                 showQuickJumper
                 showTotal={(total) => `Tổng cộng ${total} vaccine`}
               />
