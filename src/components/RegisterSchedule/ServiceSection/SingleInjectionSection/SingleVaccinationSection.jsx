@@ -407,9 +407,6 @@ const VaccinationSection = () => {
         </div>
         {Object.entries(groupedByType).map(([vaccineType, schedules]) => (
           <div key={vaccineType} className="temporary-schedules__type-group">
-            <Title level={5} className="temporary-schedules__type-title">
-              {vaccineType}
-            </Title>
             <List
               dataSource={schedules}
               renderItem={(item) => (

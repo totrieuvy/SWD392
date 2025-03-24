@@ -84,7 +84,7 @@ function Vaccine() {
       const response = await api.get("v1/vaccine?pageIndex=1&pageSize=10000");
       const listManufacturers = await api.get("v1/manufacturer");
       setManufacturers(listManufacturers.data.data);
-      const sortedData = response.data.data.sort((a, b) => b.isActive - a.isActive);
+      const sortedData = response.data.data.sort((a, b) => a.minAge - b.minAge);
       setDataSource(sortedData);
       setFilteredData(sortedData);
     } catch (error) {
@@ -210,7 +210,11 @@ function Vaccine() {
 
       const payload = {
         vaccineName: values.vaccineName,
-        description: values.description,
+        description: {
+          info: values.description?.info,
+          targetedPatient: values.description?.targetedPatient,
+          vaccineReaction: values.description?.vaccineReaction,
+        }, // Removed injectionSchedule
         minAge: values.minAge,
         maxAge: values.maxAge,
         numberDose: values.numberDose,
@@ -289,7 +293,6 @@ function Vaccine() {
 
   const exportExcel = () => {
     try {
-      // Chuẩn bị dữ liệu cho Excel
       const excelData = filteredData.map((item) => ({
         "Vaccine Name": item.vaccineName,
         Manufacturer: item.manufacturers[0]?.name || "N/A",
@@ -301,24 +304,18 @@ function Vaccine() {
         Status: item.isActive ? "Active" : "Inactive",
         Information: item.description?.info || "",
         "Targeted Patients": item.description?.targetedPatient || "",
-        "Injection Schedule": item.description?.injectionSchedule || "",
-        "Vaccine Reaction": item.description?.vaccineReaction || "",
+        "Vaccine Reaction": item.description?.vaccineReaction || "", // Removed injectionSchedule
       }));
 
-      // Tạo worksheet
       const ws = XLSX.utils.json_to_sheet(excelData);
-
-      // Điều chỉnh độ rộng cột
       const colWidths = Object.keys(excelData[0]).map((key) => ({
         wch: Math.max(key.length, ...excelData.map((item) => String(item[key]).length)) + 5,
       }));
       ws["!cols"] = colWidths;
 
-      // Tạo workbook
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Vaccines");
 
-      // Thêm thông tin tổng quan
       const summary = [
         ["Export Date:", new Date().toLocaleDateString()],
         ["Total Vaccines:", filteredData.length],
@@ -328,7 +325,6 @@ function Vaccine() {
       const summaryWs = XLSX.utils.aoa_to_sheet(summary);
       XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
 
-      // Xuất file
       XLSX.writeFile(wb, "vaccine-list.xlsx");
       toast.success("Excel exported successfully");
     } catch (error) {
@@ -429,13 +425,6 @@ function Vaccine() {
                 <Input />
               </Form.Item>
               <Form.Item
-                name={["description", "injectionSchedule"]}
-                label="Injection Schedule"
-                rules={[{ required: true, message: "Please enter injection schedule" }]}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item
                 name={["description", "vaccineReaction"]}
                 label="Vaccine Reaction"
                 rules={[{ required: true, message: "Please enter vaccine reaction" }]}
@@ -530,7 +519,6 @@ function Vaccine() {
             <Descriptions.Item label="Giá">{formatVND(selectedVaccine.price)}</Descriptions.Item>
             <Descriptions.Item label="Thông tin">{selectedVaccine.description?.info}</Descriptions.Item>
             <Descriptions.Item label="Đối tượng">{selectedVaccine.description?.targetedPatient}</Descriptions.Item>
-            <Descriptions.Item label="Lịch tiêm">{selectedVaccine.description?.injectionSchedule}</Descriptions.Item>
             <Descriptions.Item label="Phản ứng">{selectedVaccine.description?.vaccineReaction}</Descriptions.Item>
             <Descriptions.Item label="Độ tuổi">
               {selectedVaccine.minAge} - {selectedVaccine.maxAge} tháng

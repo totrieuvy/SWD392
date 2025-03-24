@@ -129,7 +129,7 @@ const ChatWithGemini = () => {
               alignItems: "center",
             }}
           >
-            <span>Chat with Gemini AI</span>
+            <span>Chat with Vaccinecare AI</span>
             <button
               onClick={() => setIsChatOpen(false)}
               style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}
