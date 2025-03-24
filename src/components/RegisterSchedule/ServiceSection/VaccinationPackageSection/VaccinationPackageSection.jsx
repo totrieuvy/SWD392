@@ -371,6 +371,7 @@ const VaccinationPackageSection = () => {
           </Space>
         </div>
 
+        {/* Removed the total-price div */}
         <div className="total-price">
           <span>Tổng cộng:</span>
           <span className="price-value">{formatPrice(calculateTotalPrice())}</span>
@@ -460,7 +461,6 @@ const VaccinationPackageSection = () => {
                               />
                             </div>
                           }
-                          extra={<span>{formatPrice(pkg.price)}</span>}
                         >
                           <p>{pkg.description}</p>
                           {pkg.vaccines && pkg.vaccines.length > 0 ? (
@@ -503,19 +503,34 @@ const VaccinationPackageSection = () => {
         width={800}
       >
         {currentVaccine && (
-          <div className="current-vaccine-info">
+          <>
             <h4>Vắc-xin hiện tại:</h4>
-            <div className="vaccine-current-details">
-              <Image src={currentVaccine.image} alt={currentVaccine.vaccineName} className="vaccine-image" />
-              <div>
-                <div>{currentVaccine.vaccineName}</div>
-                <div>
-                  {currentVaccine.manufacturers[0]?.name} ({currentVaccine.manufacturers[0]?.countryCode})
-                </div>
-                <div className="price">{formatPrice(currentVaccine.price)}</div>
-              </div>
-            </div>
-          </div>
+            <Table
+              dataSource={[currentVaccine]} // Wrap currentVaccine in an array to use as table data
+              rowKey="vaccineId"
+              pagination={false}
+              columns={[
+                {
+                  title: "Hình ảnh",
+                  dataIndex: "image",
+                  key: "image",
+                  render: (image) => <Image src={image} alt="Vaccine" className="vaccine-image-table" />,
+                },
+                { title: "Vắc-xin", dataIndex: "vaccineName", key: "vaccineName" },
+                {
+                  title: "Nhà sản xuất",
+                  dataIndex: ["manufacturers", 0, "name"],
+                  key: "manufacturer",
+                  render: (text, record) => (
+                    <span>
+                      {record.manufacturers[0]?.name} ({record.manufacturers[0]?.countryCode})
+                    </span>
+                  ),
+                },
+                { title: "Giá", dataIndex: "price", key: "price", render: formatPrice },
+              ]}
+            />
+          </>
         )}
 
         {alternativeVaccines.length === 0 ? (

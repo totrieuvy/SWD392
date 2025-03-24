@@ -150,11 +150,6 @@ function Staff() {
       sorter: (a, b) => a.bloodType.localeCompare(b.bloodType),
     },
     {
-      title: "Role",
-      dataIndex: "role",
-      key: "role",
-    },
-    {
       title: "Status",
       dataIndex: "status",
       key: "status",
@@ -214,9 +209,6 @@ function Staff() {
           </p>
           <p>
             <strong>Gender:</strong> {selectedStaff.gender}
-          </p>
-          <p>
-            <strong>Role:</strong> {selectedStaff.role}
           </p>
           <p>
             <strong>Status:</strong> {selectedStaff.status}
