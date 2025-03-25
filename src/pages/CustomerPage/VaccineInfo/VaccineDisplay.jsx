@@ -82,7 +82,7 @@ function VaccineDisplay() {
     {
       title: "Độ tuổi",
       key: "ageRange",
-      render: (_, record) => <span>{`${record.minAge} - ${record.maxAge} tuổi`}</span>,
+      render: (_, record) => <span>{`${record.minAge} - ${record.maxAge} tháng tuổi`}</span>,
       sorter: (a, b) => a.minAge - b.minAge,
     },
     {
