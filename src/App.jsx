@@ -30,6 +30,7 @@ import ResetPassword from "./pages/CustomerPage/resetPassword/ResetPassword";
 import MedicalRecord from "./pages/CustomerPage/MedicalRecord/MedicalRecord";
 import ChatRoom from "./components/Chat";
 import MainLayout from "./pages/CustomerPage/HomePage/MainLayout";
+import PaymentFailed from "./components/paymentSuccess/PaymentFailed";
 
 const PrivateRoute = ({ roleName }) => {
   const user = useSelector((state) => state?.user);
@@ -90,6 +91,10 @@ const App = () => {
             {
               path: "payment-success",
               element: <PaymentSuccess />,
+            },
+            {
+              path: "payment-cancel",
+              element: <PaymentFailed />,
             },
             {
               path: "children-profile",
