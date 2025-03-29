@@ -1,7 +1,7 @@
 import axios from "axios";
-// const baseUrl = "http://34.126.179.80:5014/api/";
+const baseUrl = "http://localhost:5014/api/";
 // const baseUrl = "https://localhost:7089/api/";
-const baseUrl = "https://api.vaccinecare.site/api/";
+// const baseUrl = "https://api.vaccinecare.site/api/";
 
 //
 const config = {
